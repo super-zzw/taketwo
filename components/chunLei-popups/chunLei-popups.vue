@@ -5,7 +5,7 @@
 			<text :class="dynPlace" :style="{width:'0px',height:'0px'}" v-if="triangle"></text>
 			<view v-for="(item,index) in popData" :key="index" @tap.stop="tapItem(item)" 
 				class="itemChild view" :class="[direction=='row'?'solid-right':'solid-bottom',item.disabled?'disabledColor':'']">
-				<image class="image" :src="item.icon" v-if="item.icon"></image>{{item.title}}
+				<image class="image" :src="item.icon" v-if="item.icon"></image>{{item}}
 			</view>
 			<slot></slot>
 		</view>
@@ -246,7 +246,7 @@
 			content: "";
 			position: absolute;
 			top: -18rpx;
-			right: 10rpx;
+			right: 100rpx;
 			border-width: 0 20rpx 20rpx;
 			border-style: solid;
 			border-color: transparent transparent #4C4C4C;
@@ -291,7 +291,8 @@
 			content: "";
 			position: absolute;
 			top: -18rpx;
-			right: 10rpx;
+			right: 50%;
+			transform: translateX(50%);
 			border-width: 0 20rpx 20rpx;
 			border-style: solid;
 			border-color: transparent transparent #fff;
@@ -320,7 +321,7 @@
 		}
 	}
 	.solid-bottom{
-		border-bottom: 1px solid #ccc;
+		// border-bottom: 1px solid #ccc;
 	}
 	.solid-right{
 		
