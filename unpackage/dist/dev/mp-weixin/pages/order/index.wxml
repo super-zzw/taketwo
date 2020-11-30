@@ -1,1 +1,0 @@
-<view class="container data-v-0ca91b30"><view class="bannerBox data-v-0ca91b30"><view class="tabsBox data-v-0ca91b30"><block wx:for="{{tabs}}" wx:for-item="tab" wx:for-index="i" wx:key="i"><text class="{{['data-v-0ca91b30',index==i?'tab active':'tab']}}">{{tab}}</text></block></view><view class="optBox data-v-0ca91b30"></view></view></view>
