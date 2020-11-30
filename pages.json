@@ -35,6 +35,15 @@
         }
        
         
+        ,{
+            "path" : "pages/order/orderDetail",
+            "style" :                                                                                    
+            {
+                "navigationBarTitleText": "",
+                "enablePullDownRefresh": false
+            }
+            
+        }
     ],
 	"tabBar": {
 	    "color": "#909399",
