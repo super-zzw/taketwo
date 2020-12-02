@@ -2,16 +2,20 @@ import store from '../store'
 import { upLoadImg } from './request.js';
 export default{
 	wxLogin(){
+		// console.log(1515)
 		return new Promise((resolve,reject) => {
 			uni.login({
 			  provider: 'weixin',
 			  success: function (res) {
+				  // console.log(res.code)
 				if (res.code) {
 				    uni.getUserInfo({
 				    	provider: 'weixin',
 				    	success: function(infoRes) {
 							let result = {}
-							Object.assign(result,infoRes.userInfo,{jsCode:res.code},{inviteCode:store.state.inviteCode});
+							Object.assign(result,infoRes,{jsCode:res.code})
+							
+							
 							resolve(result);
 				    	},
 				    	fail(res) {

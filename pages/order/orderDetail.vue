@@ -198,7 +198,7 @@
 		components:{DatePicker},
 		data() {
 			return {
-             status:'待分拣',
+             status:'待配送',
 			   modalName:null,
 			   reasons:['包裹大小选择错误','有违禁品','送货地址超出送达范围','其他原因'],
 			   tagsList:['科大宿舍楼10栋','科大宿舍楼9栋','科大宿舍楼8栋','科大宿舍楼7栋'],

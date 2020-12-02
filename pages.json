@@ -44,6 +44,15 @@
             }
             
         }
+        ,{
+            "path" : "pages/author/index",
+            "style" :                                                                                    
+            {
+                "navigationBarTitleText": "",
+                "enablePullDownRefresh": false
+            }
+            
+        }
     ],
 	"tabBar": {
 	    "color": "#909399",

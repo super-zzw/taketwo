@@ -67,6 +67,7 @@
 		<!-- 搜索 -->
 		<view class="cu-modal bottom-modal" :class="modalName=='search'?'show':''">
 			<view class="cu-dialog dialog dialog1">
+				 <icon type="clear" size="26" class="close" @tap="modalName=null"/>
 				<text class="title">订单搜索</text>
 				<view class="inputBox">
 					<input type="text" v-model="ipt" placeholder="请输入姓名、电话、订单号" />
@@ -96,12 +97,12 @@
                     	<text class="label">下单时间</text>
                     	<view class="cont">
                             <view class="cont1">
-								<view class="box">
+								<view class="box" @tap="modalName='date'">
 									2020/10/24 9:00
 									<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
 								</view> <text>至</text>
 							</view>
-                    		<view class="box">
+                    		<view class="box" @tap="modalName='date'">
                     			2020/10/30 9:00
                     			<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
                     		</view> 
@@ -111,7 +112,7 @@
 						<text class="label">收货时间</text>
 						<view class="cont">
 					        <!-- <view class="cont1"> -->
-								<view class="box">
+								<view class="box" @tap="modalName='date'">
 									2020/10/24 9:00
 									<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
 								</view> 
@@ -171,8 +172,8 @@
 					</view>
 				</view>
 				<view class="btns">
-					<view class="btn btn1" @tap="hideModal">重置</view>
-					<view class="btn btn2" @tap="hideModal">确定</view>
+					<view class="btn btn1" @tap="reset">重置</view>
+					<view class="btn btn2" @tap="confirm">确定</view>
 				</view>
 			</view>
 		</view>
@@ -235,6 +236,7 @@
 				</view>
 			</view>
 		</view>
+		<DatePicker :modalName="modalName" @hideModal="hideModal('search')"/>
 	</view>
 	
 </template>
@@ -245,13 +247,16 @@
 	} from 'vuex';
 	import chunLeiPopups from "@/components/chunLei-popups/chunLei-popups.vue";
 	import addressList from '../../utils/address.js'
+	import DatePicker from '../../components/datePicker.vue'
+	
 	export default {
 		components: {
-			chunLeiPopups
+			chunLeiPopups,DatePicker
 		},
 		computed: {
 			...mapState(['role'])
 		},
+		
 		data() {
 			return {
           
@@ -275,6 +280,7 @@
 			uni.showLoading({
 				title: '加载中'
 			})
+			if(uni.getStorageInfoSync(''))
 			this.tabs = this.role == 0 ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认']
 			await this.getOrderList()
 			uni.hideLoading()
@@ -289,6 +295,13 @@
 				}
 			}
 		},
+		watch:{
+			modalName(val){
+				if(val==null){
+					uni.showTabBar()
+				}
+			}
+		},
 		methods: {
 			hideModal(name='null'){
 				this.modalName = name
@@ -296,6 +309,12 @@
 			search() {
 				uni.hideTabBar()
 				this.modalName = 'search'
+			},
+			reset(){
+				
+			},
+			confirm(){
+				
 			},
 			showFilter() {
 				this.bool = true
@@ -624,9 +643,11 @@
 			font-family: PingFangSC-Medium, PingFang SC;
 			font-weight: 500;
 			color: #181819;
-			display: flex;
+			display: grid;
+			place-items: center;
+			/* display: flex;
 			align-items: center;
-			justify-content: center;
+			justify-content: center; */
 		}
 	}
 
@@ -647,6 +668,12 @@
 		border-radius: 40rpx 40rpx 0rpx 0rpx !important;
          max-height: 1200rpx;
 		 overflow: scroll;
+		 position: relative;
+		 .close{
+			 position: absolute;
+			 right: 20rpx;
+			 top: 20rpx;
+		 }
 		.title {
 			font-size: 40rpx;
 
@@ -722,7 +749,7 @@
 					align-items: center;
 					margin-right: 32rpx;
                     margin-bottom: 20rpx;
-					display: inline-block;
+					// display: inline-block;
 					.icon {
 						width: 32rpx;
 						height: 32rpx;
@@ -782,9 +809,10 @@
 		.tagsList {
 			padding: 0 18rpx;
 			margin-top: 88rpx;
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: space-between;
+			// display: grid;
+			// grid-template-columns:274rpx 274rpx;
+		  columns: 2;
+			// gap:32rpx 24rpx ;
 
 			.tag {
 
@@ -793,16 +821,12 @@
 				border-radius: 10rpx;
 				width: 274rpx;
 				height: 64rpx;
-				display: flex;
-				justify-content: center;
-				align-items: center;
+				display: grid;
+				place-items: center;
 				font-size: 32rpx;
-
 				font-weight: 400;
 				color: #909399;
 				line-height: 44rpx;
-				margin-right: 32rpx;
-				margin-bottom: 24rpx;
 
 				&.active {
 
@@ -933,5 +957,9 @@
 				box-shadow: 0rpx 4rpx 20rpx 0rpx rgba(255,174,24,0.3);
 			}
 		}
+	}
+	.box.active{
+		
+background: #FFAE18;
 	}
 </style>

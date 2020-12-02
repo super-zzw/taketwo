@@ -2,12 +2,17 @@
 	import Vue from 'vue'
 	export default {
 		onLaunch: function() {
-			
-
+			if(!uni.getStorageSync('sessionId')){
+				uni.reLaunch({
+					url:'/pages/author/index'
+				})
+			}
 		},
 		onShow: function() {
 			
 		},
+		
+	
 		onHide: function() {
 			
 		}
