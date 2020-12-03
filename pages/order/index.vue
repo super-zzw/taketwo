@@ -70,7 +70,7 @@
 				 <icon type="clear" size="26" class="close" @tap="modalName=null"/>
 				<text class="title">订单搜索</text>
 				<view class="inputBox">
-					<input type="text" v-model="ipt" placeholder="请输入姓名、电话、订单号" />
+					<input type="text" v-model="searchData.searchValue" placeholder="请输入姓名、电话、订单号" />
 					<image src="/static/image/search.png" mode=""></image>
 				</view>
 				<view class="content">
@@ -97,13 +97,13 @@
                     	<text class="label">下单时间</text>
                     	<view class="cont">
                             <view class="cont1">
-								<view class="box" @tap="modalName='date'">
-									2020/10/24 9:00
+								<view class="box" @tap="modalName='date',dateType='ordersBeginTime'" >
+									{{ordersBeginTimeTxt}}
 									<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
 								</view> <text>至</text>
 							</view>
-                    		<view class="box" @tap="modalName='date'">
-                    			2020/10/30 9:00
+                    		<view class="box" @tap="modalName='date',dateType='ordersEndTime'">
+                    			{{ordersEndTimeTxt}}
                     			<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
                     		</view> 
                     	</view>
@@ -112,8 +112,8 @@
 						<text class="label">收货时间</text>
 						<view class="cont">
 					        <!-- <view class="cont1"> -->
-								<view class="box" @tap="modalName='date'">
-									2020/10/24 9:00
+								<view class="box" @tap="modalName='date',dateType='receivingTime'">
+									{{receivingTxt}}
 									<image src="/static/image/down.png" mode="" class="icon" style="margin-left: 10rpx;"></image>
 								</view> 
 							<!-- </view> -->
@@ -124,15 +124,15 @@
 						<text class="label">物流公司</text>
 						<view class="cont">
 					        <view class="cont1">
-								<view class="box">
-									菜鸟裹裹
+								<view class="box" v-for="item in config.logisticsList" :key="item.id">
+									{{item.logisticsCompany}}
 								</view> 
-								<view class="box">
+								<!-- <view class="box">
 									顺丰快递
 								</view> 
 								<view class="box">
 									京东物流
-								</view> 
+								</view> -->
 								
 							</view>
 							
@@ -158,12 +158,12 @@
 						<text class="label">包裹类型</text>
 						<view class="cont">
 					        <view class="cont1">
-								<view class="box">
-									大包裹
+								<view class="box" v-for="item in config.parcelType" :key="item.id">
+									{{item.title}}
 								</view> 
-								<view class="box">
+								<!-- <view class="box">
 									小包裹
-								</view> 
+								</view> -->
 							
 								
 							</view>
@@ -236,7 +236,7 @@
 				</view>
 			</view>
 		</view>
-		<DatePicker :modalName="modalName" @hideModal="hideModal('search')"/>
+		<DatePicker :modalName="modalName" @confirm="selTime" @cancel="hideModal('search')" :type="dateType"/>
 	</view>
 	
 </template>
@@ -254,7 +254,7 @@
 			chunLeiPopups,DatePicker
 		},
 		computed: {
-			...mapState(['role'])
+			...mapState(['role','config'])
 		},
 		
 		data() {
@@ -268,15 +268,20 @@
 				allSel: false,
 				statusTxt: '待接单',
 				modalName: null,
-				ipt: '',
+				
 				tagsList: ['科大宿舍楼10栋', '科大宿舍楼9栋', '科大宿舍楼8栋', '科大宿舍楼7栋'],
 				tagIndex: 0,
 				addressList:addressList,
-				selectAddr:[0,0]
+				selectAddr:[0,0],
+				searchData:{},
+				receivingTxt:'请选择收货时间',
+				ordersBeginTimeTxt:'下单开始时间',
+				ordersEndTimeTxt:'下单结束时间',
+				dateType:''
 			};
 		},
 		async created() {
-			// console.log(addressList)
+			console.log(this.config)
 			uni.showLoading({
 				title: '加载中'
 			})
@@ -304,7 +309,31 @@
 		},
 		methods: {
 			hideModal(name='null'){
+				
 				this.modalName = name
+			},
+			selTime(val){
+				console.log(val)
+				var date=val.year+'/'+val.month+'/'+parseInt(val.date)
+				if(this.dateType=='receivingTime'){
+				    var txt1=date+' '+val.time.split('-')[0]
+					var txt2=date+' '+val.time.split('-')[1]
+					this.receivingTxt=txt1+'-'+val.time.split('-')[1]
+					this.searchData.receivingBeginTime=new Date(txt1).getTime()
+					this.searchData.receivingEndTime=new Date(txt2).getTime()
+				}else if(this.dateType=='ordersBeginTime'){
+					this.ordersBeginTimeTxt=date+' '+val.time
+					this.searchData.ordersBeginTime=new Date(this.ordersBeginTimeTxt).getTime()
+				}else if(this.dateType=='ordersEndTime'){
+					this.ordersEndTimeTxt=date+' '+val.time
+					this.searchData.ordersEndTime=new Date(this.ordersEndTimeTxt).getTime()
+				}
+				
+				
+				
+				
+				
+				this.modalName = 'search'
 			},
 			search() {
 				uni.hideTabBar()

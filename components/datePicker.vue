@@ -4,10 +4,10 @@
 			<text class="title">选择时间</text>
 			<view class="content">
 				<view class="dayBox">
-					<text :class="date==i?'dayItem active':'dayItem'" v-for="(item,i) in dayList" :key="i" @tap="date=i">{{item}}</text>
+					<text :class="dateI==i?'dayItem active':'dayItem'" v-for="(item,i) in dayList" :key="i" @tap="change1(i)">{{item.date}}</text>
 				</view>
 				<view class="timeBox">
-					<view :class="time==i?'timeItem active':'timeItem'" v-for="(item,i) in timeList" :key="i" @tap="time=i">
+					<view :class="timeI==i?'timeItem active':'timeItem'" v-for="(item,i) in timeList" :key="i" @tap="change2(i)">
 						{{item}}
 					</view>
 				</view>
@@ -17,53 +17,85 @@
 			</view>
 				<view class="btns">
 					<view class="btn btn2" @tap="hideModal">取消</view>
-					<view class="btn btn1" @tap="hideModal">确定</view>
+					<view class="btn btn1" @tap="confirm">确定</view>
 				</view>
 			</view>
 		</view>
 </template>
 
 <script>
+	import {mapState} from 'vuex'
 	export default {
 		props:{
 			modalName:{
 				default:null,
 				type:String,
 				
+			},
+			type:{
+				
 			}
+		},
+		computed:{
+			...mapState(['config'])
 		},
 		data() {
 			return {
 				dayList:[],
 				timeList:['9:00','10:00','11:00','12:00','13:00','14:00','15:00'],
-				date:0,
-				time:0,
-				
+				dateI:0,
+				timeI:0,
+				text:''
 			};
 		},
 		created() {
-			console.log(11111)
 			this.getDayList()
-			console.log(this.dayList)
+		},
+		watch:{
+			type(val){
+				this.dateI=0
+				this.timeI=0
+				if(this.type=='receivingTime'){
+					
+					this.timeList=this.config.receivingTime.map(item=>{
+						return item.startTime+'-'+item.endTime
+					})
+				}else{
+					this.timeList=['9:00','10:00','11:00','12:00','13:00','14:00','15:00']
+				}
+				
+			}
 		},
 		methods:{
 			hideModal(e) {
-				this.$emit('hideModal')
-				// this.modalName = null
+				this.$emit('cancel')
+			},
+			confirm(){
+			  
+				this.$emit('confirm',{...this.dayList[this.dateI],time:this.timeList[this.timeI]})
 			},
 			getDayList(){
 				var myDate = new Date()  //获取当前日期
 				for(var i=0;i<5;i++){
 					var milliseconds=myDate.getTime()+1000*60*60*24*i; 
-					var newMyDate = new Date(milliseconds).getDate()+'日';
-					if(newMyDate<10){
-						newMyDate='0'+newMyDate
+					
+					var date = new Date(milliseconds).getDate()+'日';
+					if(i==0){
+						date=date+'(今天)'
 					}
-					this.dayList.push(newMyDate)
+					var year=new Date(milliseconds).getFullYear()
+					var month=new Date(milliseconds).getMonth()+1
+					var result={year,month,date}
+					this.dayList.push(result)
 				}
-				this.dayList[0]=this.dayList[0]+'(今天)'
 				
 				  
+			},
+			change1(i){
+				this.dateI=i
+			},
+			change2(i){
+				this.timeI=i
 			}
 		}
 	}

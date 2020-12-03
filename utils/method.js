@@ -1,4 +1,5 @@
 import store from '../store'
+import {http,httpAll} from './request.js'
 import { upLoadImg } from './request.js';
 export default{
 	wxLogin(){
@@ -178,7 +179,17 @@ export default{
 			});
 		})
 	},
-	
+	getConfig(){
+		
+		http({
+			apiName:'config'
+		}).then(res=>{
+			console.log(123,res)
+			store.commit('setConfig',res.data)
+		}).catch(err=>{
+			console.log(456,err)
+		})
+	},
 	//homeShare
 	homeShare(imageUrl){
 		return {

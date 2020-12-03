@@ -49,31 +49,52 @@
 			let res = await utils.wxLogin();
 			if(res){
 				this.loginData = res;
-				this.showModal();
-			}else{
-				uni.showToast({
-					icon: 'none',
-					title: "授权失败",
-					duration: 1500
-				});
-			}
-			uni.hideLoading()
-		 },
-		 async getPhoneNumber(e){
-		 	if(e.detail.errMsg == "getPhoneNumber:ok"){
-				console.log(this.loginData)
-				console.log(e)
 				let _data = {
-					code:this.loginData.jsCode,
-					encryptedData:e.detail.encryptedData,
-					iv:e.detail.iv
+					code:res.jsCode,
+					encryptedData:res.encryptedData,
+					iv:res.iv
 				}
 				await this.$http({
 					apiName:"login",
 					method:"POST",
 					data:_data,
 				}).then(res => {
-					console.log(1,res)
+					console.log(res)
+					uni.setStorageSync('token',res.token); // 存session
+					uni.setStorageSync('userInfo',res.wechat_info); // 存session
+					uni.reLaunch({
+						url:'../order/index'
+					})
+					
+				}).catch(err => {
+					this.hideModal()
+					console.log(2,err)
+					if(err.data.ret==11003){
+						this.showModal()
+					}
+					
+				})
+				
+			}
+			uni.hideLoading()
+		 },
+		 async getPhoneNumber(e){
+		 	if(e.detail.errMsg == "getPhoneNumber:ok"){
+				
+				let _data = {
+					code:this.loginData.jsCode,
+					encryptedData:e.detail.encryptedData,
+					iv:e.detail.iv
+				}
+				await this.$http({
+					apiName:"bindPhone",
+					method:"POST",
+					data:_data,
+				}).then(res => {
+					console.log('绑定成功')
+					uni.reLaunch({
+						url:'../order/index'
+					})
 					this.hideModal()
 				}).catch(err => {
 					this.hideModal()

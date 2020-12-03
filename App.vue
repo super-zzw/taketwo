@@ -1,8 +1,9 @@
 <script>
 	import Vue from 'vue'
 	export default {
-		onLaunch: function() {
-			if(!uni.getStorageSync('sessionId')){
+		async onLaunch() {
+			await this.$config()
+			if(!uni.getStorageSync('token')){
 				uni.reLaunch({
 					url:'/pages/author/index'
 				})

@@ -7,7 +7,7 @@ if (test) {
 	_baseUrl = 'http://mgm-api.dev.gzcyou.com/api';  //内网穿透地址
 } else {
 	// _baseUrl = 'https://api.migmkids.com/api';  //正式地址
-	_baseUrl = 'http://192.168.1.25:7600/wechat/team/auth';  //本地地址
+	_baseUrl = 'http://192.168.1.17:7600';  //本地地址
 }
 var baseUrl = _baseUrl;
 // 请求loading交给页面处理
@@ -27,30 +27,18 @@ export function http(opt) {
 			data:_data,
 			success:res => {
 				if(res.statusCode == 200){
-					if(res.data && res.data.code == 200000){
-						resolve(res.data)
-					} else if (res.data && res.data.code == 300000) {
-				
-						uni.hideLoading()
-						utils.rmData();
-						uni.reLaunch({
-							url: "/pages/author/author"
-						})
-						reject(res)
-						
-					} else {
-						uni.hideLoading();
-						if(!opt.hiddenToast){
-							uni.showToast({
-								icon: 'none',
-								title: res.data.message,
-								duration: 1500
-							});
-						}
-						setTimeout(_=>{
-							reject(res)
-						},200)
-					}
+					if(res.data.ret === 0){
+					      resolve(res.data)
+					     }else{
+					      uni.showToast({
+					       icon: 'none',
+					       title: res.data.msg,
+					       duration: 1500
+					      });
+					      setTimeout(_=>{
+					       reject(res)
+					      },1500)
+					     }
 				} else {
 					uni.hideLoading()
 					reject('服务器错误')
