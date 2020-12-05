@@ -2,65 +2,81 @@
 	<view class="container">
 		<view class="bannerBox">
 			<view class="tabsBox">
-				<text :class="index==i?'tab active':'tab'" v-for="(tab,i) in tabs" :key="i" @click="index=i">{{tab}}</text>
+				<text :class="index==i+1?'tab active':'tab'" v-for="(tab,i) in tabs" :key="i" @click="index=i+1">{{tab}}</text>
 			</view>
 			<view class="optBox">
 				<image src="/static/image/sort.png" mode="" class="icon sort" @click="showFilter"></image>
 				<image src="/static/image/search.png" mode="" class="icon" @click="search"></image>
 			</view>
 		</view>
-		<view class="orderBox">
-			<view class="orderItem" v-for="(item,i) in orderList" :key="i" @click="toDetail">
-				<view class="order-head">
-					<view class="left">
-						<text class="s1" @click="select(1,i)" v-if="!item.selected"></text>
-						<image src="/static/image/select.png" mode="" class="selected" @click="select(-1,i)" v-if="item.selected"></image>
-					</view>
-					<view class="right">
-						<image src="/static/image/time.png" mode="" class="timeIcon"></image>
-						<text class="time">2020/11/24 9:28</text>
-						<text class="status">{{statusTxt}}</text>
-
-					</view>
-				</view>
-				<view class="order-cont">
-					<view class="code" v-if="index==2||index==1||index==3">
-						<text class="desc">取件码：</text>
-						<view class="num">
-							98765
-							<image src="/static/image/copy.png" mode="" @click="copy"></image>
+		<block v-if="orderList.length>0">
+			<view class="orderBox">
+				<view class="orderItem" v-for="(item,i) in orderList" :key="i" >
+					<view class="order-head">
+						<view class="left">
+							<text class="s1" @click="select(1,i)" v-if="!item.selected"></text>
+							<image src="/static/image/select.png" mode="" class="selected" @click="select(-1,i)" v-if="item.selected"></image>
+						</view>
+						<view class="right">
+							<image src="/static/image/time.png" mode="" class="timeIcon" v-if="index!=1&&index!=2"></image>
+							<text class="time">{{item.createTime|dateFormat}}</text>
+							<block v-if="currentRole==1">
+								<text class="status" v-if="item.status==1">待接单</text>
+								<text class="status" v-if="item.status==2">待分拣</text>
+								<text class="status" v-if="item.status==3">已分拣</text>
+								<text class="status" v-if="item.status==4">代配送</text>
+								<text class="status" v-if="item.status==5">已退单</text>
+							</block>
+							<block v-if="currentRole==2">
+								<text class="status" v-if="item.status==1">待接单</text>
+								<text class="status" v-if="item.status==2">配送中</text>
+								<text class="status" v-if="item.status==3">已完成</text>
+								<text class="status" v-if="item.status==4">已确认</text>
+							</block>
+			
 						</view>
 					</view>
-					<view class="stuInfo">
-						<image src="/static/image/send.png" mode="" class="sendIcon"></image>
-						<view class="main">
-							<text class="t1">广州科大白云校区10栋12楼1206室</text>
-							<text class="t2">周同学&ensp;159****9999</text>
+					<view class="order-cont" @click="toDetail">
+						<view class="code" v-if="iteem.fetchCode">
+							<text class="desc">取件码：</text>
+							<view class="num">
+								{{item.fetchCode}}
+								<image src="/static/image/copy.png" mode="" @click="copy"></image>
+							</view>
 						</view>
-					</view>
-					<view class="orderInfo">
-						<text class="con">物流公司：菜鸟裹裹</text>
-						<text class="con">收货时间：2020/10/24 中午</text>
-						<view class="bott">
-							<text class="con">类型：定时送/大包裹</text>
-							<view class="price">
-								总价：<text class="num">¥20</text>
+						<view class="stuInfo">
+							<image src="/static/image/send.png" mode="" class="sendIcon"></image>
+							<view class="main">
+								<text class="t1">{{item.receiverAddress}}</text>
+								<text class="t2">{{item.receiverName}}&ensp;{{item.receiverPhone}}</text>
+							</view>
+						</view>
+						<view class="orderInfo">
+							<text class="con">物流公司：{{item.logisticsName}}</text>
+							<text class="con">收货时间：{{item.receivingStartTime|dateFormat}}-{{item.receivingEndTime|dateFormat(8)}}</text>
+							<view class="bott">
+								<text class="con">类型：{{item.type==1?'定时送':'加急送'}}/{{item.parcelType==1?'大包裹':'小包裹'}}</text>
+								<view class="price">
+									总价：<text class="num">¥{{item.paymentAmount}}</text>
+								</view>
 							</view>
 						</view>
 					</view>
 				</view>
+			
 			</view>
-
-		</view>
-		<view class="bottom" v-if="index==0||index==1">
-			<view class="left" @click="allSelect">
-				<text class="s1" v-if="!allSel"></text>
-				<image src="/static/image/select.png" mode="" class="selected" v-else></image>
-				<text class="all">本页全选</text>
+			<view class="bottom" v-if="index==1||index==2">
+				<view class="left" @click="allSelect">
+					<text class="s1" v-if="!allSel"></text>
+					<image src="/static/image/select.png" mode="" class="selected" v-else></image>
+					<text class="all">本页全选</text>
+				</view>
+				<view class="right" v-if="index==1">接单</view>
+				<view class="right" v-if="index==2&&currentRole==1">分拣</view>
+				<view class="right" v-if="index==2&&currentRole==2">配送完成</view>
 			</view>
-			<view class="right" v-if="index==0">接单</view>
-			<view class="right" v-if="index==1">分拣</view>
-		</view>
+		</block>
+		<Empty v-else></Empty>
 		<chunLei-popups v-model="bool" :popData="data" @tapPopup="tapPopup" :x="344" :y="60" placement="top-end">
 		</chunLei-popups>
 
@@ -88,7 +104,7 @@
 						<view class="cont">
 
 							<view class="box" @click="modalName='address'">
-								10栋
+								{{addressTxt}}
 								<image src="/static/image/you1.png" mode="" class="icon"></image>
 							</view>
 						</view>
@@ -127,13 +143,7 @@
 								<view class="box" v-for="item in config.logisticsList" :key="item.id">
 									{{item.logisticsCompany}}
 								</view> 
-								<!-- <view class="box">
-									顺丰快递
-								</view> 
-								<view class="box">
-									京东物流
-								</view> -->
-								
+							
 							</view>
 							
 						</view>
@@ -161,10 +171,6 @@
 								<view class="box" v-for="item in config.parcelType" :key="item.id">
 									{{item.title}}
 								</view> 
-								<!-- <view class="box">
-									小包裹
-								</view> -->
-							
 								
 							</view>
 							
@@ -205,8 +211,8 @@
 							楼
 						</view>
 						<view class="mdCol1">
-							<view :class="selectAddr[0]==i1?'mdItem active':'mdItem'" v-for="(item1,i1) in addressList.list1" :key="i1" @click="change1(i1)">
-								{{item1}}
+							<view :class="selectAddr[0]==i1?'mdItem active':'mdItem'" v-for="(item1,i1) in addressList" :key="i1" @click="change1(i1)">
+								{{item1.building_name}}
 							</view>
 							
 						</view>
@@ -216,8 +222,8 @@
 							层
 						</view>
 						<view class="mdCol1">
-							<view class="mdItem" :class="selectAddr[1]==i2?'mdItem active':'mdItem'" v-for="(item2,i2) in addressList.list2[selectAddr[0]]" :key="i2" @click="change2(i2)">
-								{{item2}}
+							<view class="mdItem" :class="selectAddr[1]==i2?'mdItem active':'mdItem'" v-for="(item2,i2) in addressList[selectAddr[0]].layers_num" :key="i2" @click="change2(i2)">
+								{{item2+1}}层
 							</view>
 							
 						</view>
@@ -229,7 +235,7 @@
 						<view class="dBtn dBtn0" @tap="hideModal">
 							取消
 						</view>
-						<view class="dBtn dBtn1" @tap="hideModal('search')">
+						<view class="dBtn dBtn1" @tap="addressConfirm">
 							确定
 						</view>
 					</view>
@@ -245,8 +251,9 @@
 	import {
 		mapState
 	} from 'vuex';
+	import utils from '../../utils/method.js'
 	import chunLeiPopups from "@/components/chunLei-popups/chunLei-popups.vue";
-	import addressList from '../../utils/address.js'
+	// import addressList from '../../utils/address.js'
 	import DatePicker from '../../components/datePicker.vue'
 	
 	export default {
@@ -254,25 +261,28 @@
 			chunLeiPopups,DatePicker
 		},
 		computed: {
-			...mapState(['role','config'])
+			...mapState(['currentRole','config','memberInfo'])
 		},
-		
+		filters:{
+			dateFormat(val,type){
+				return utils.unixToDatetime(val,type) 
+			}
+		},
 		data() {
 			return {
-          
 				tabs: [],
-				index: 0,
+				index: 1,
 				bool: false,
 				data: ['按订单编号升序', '按订单编号降序', '按取件码升序', '按取件码降序'],
 				orderList: [],
 				allSel: false,
-				statusTxt: '待接单',
 				modalName: null,
-				
+				loaded:false,
 				tagsList: ['科大宿舍楼10栋', '科大宿舍楼9栋', '科大宿舍楼8栋', '科大宿舍楼7栋'],
 				tagIndex: 0,
-				addressList:addressList,
+				addressList:{},
 				selectAddr:[0,0],
+				addressTxt:'请选择收货地址',
 				searchData:{},
 				receivingTxt:'请选择收货时间',
 				ordersBeginTimeTxt:'下单开始时间',
@@ -280,34 +290,74 @@
 				dateType:''
 			};
 		},
-		async created() {
-			console.log(this.config)
-			uni.showLoading({
-				title: '加载中'
-			})
-			if(uni.getStorageInfoSync(''))
-			this.tabs = this.role == 0 ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认']
-			await this.getOrderList()
-			uni.hideLoading()
+		async onLoad() {
+	        await this.$onLaunched;
+			
+			this.initData()
+			
+			
 		},
 		watch: {
 			index(i) {
-				if (i == 0) {
-					this.statusTxt = '待接单'
-				} else {
-					console.log(i)
-					this.statusTxt = this.tabs[i]
-				}
-			}
-		},
-		watch:{
+				
+				this.getOrderList()
+			},
 			modalName(val){
 				if(val==null){
 					uni.showTabBar()
 				}
+			},
+			currentRole(newVal,old){
+				this.tabs=newVal ==1  ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认'],
+				this.getOrderList()
+				this.index=1
 			}
 		},
 		methods: {
+			async initData(){
+				uni.showLoading({
+					title: '加载中'
+				})
+				
+				await this.$config()
+				await this.getRole()
+				await this.getOrderList()
+				await this.getAreaList()
+				
+				// await this.getOrderList()
+				
+				uni.hideLoading()
+			},
+			getRole(){
+				this.$http({
+					apiName:'getRole',
+					method:'POST',
+					data:{
+						tid:this.memberInfo.user_info.tid,
+						
+					}
+				}).then(res=>{
+					 this.$store.commit('setRoles',res.data) 
+					 this.$store.commit('setRole',res.data[0].roleType) 
+					 this.tabs = res.data[0].roleType ==1  ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认']
+				}).catch(err=>{})
+			},
+			addressConfirm(){
+				this.addressTxt=this.addressList[this.selectAddr[0]].building_name+(this.selectAddr[1]+1)+'层'
+				// this.searchData.block=this.addressList[this.selectAddr[0]].building_name
+				this.hideModal('search')
+				
+			},
+			getAreaList(){
+				this.$http({
+					apiName:'getAreaList',
+					data:{
+						school_id :1
+					}
+				}).then(res=>{
+					this.addressList=res.buildings
+				})
+			},
 			hideModal(name='null'){
 				
 				this.modalName = name
@@ -322,11 +372,31 @@
 					this.searchData.receivingBeginTime=new Date(txt1).getTime()
 					this.searchData.receivingEndTime=new Date(txt2).getTime()
 				}else if(this.dateType=='ordersBeginTime'){
-					this.ordersBeginTimeTxt=date+' '+val.time
-					this.searchData.ordersBeginTime=new Date(this.ordersBeginTimeTxt).getTime()
+					let text=date+' '+val.time
+					let timeStamp=new Date(text).getTime()
+					
+					if(this.searchData.ordersEndTime&&timeStamp>=this.searchData.ordersEndTime){
+						uni.showToast({
+							icon:'none',
+							title:'开始时间必须小于结束时间'
+						})
+					}else{
+						this.ordersBeginTimeTxt=text
+						this.searchData.ordersBeginTime=timeStamp
+					}
 				}else if(this.dateType=='ordersEndTime'){
-					this.ordersEndTimeTxt=date+' '+val.time
-					this.searchData.ordersEndTime=new Date(this.ordersEndTimeTxt).getTime()
+					let text=date+' '+val.time
+					let timeStamp=new Date(text).getTime()
+					if(this.searchData.ordersBeginTime&&timeStamp<=this.searchData.ordersBeginTime){
+						uni.showToast({
+							icon:'none',
+							title:'结束时间必须大于开始时间'
+						})
+					}else{
+							this.ordersEndTimeTxt=text
+						this.searchData.ordersEndTime=timeStamp
+					}
+					
 				}
 				
 				
@@ -367,11 +437,26 @@
 				console.log(val)
 			},
 			getOrderList() {
-				let res = [{}, {}, {}]
-				res.forEach(item => {
-					item.selected = false
+				let apiName=this.currentRole==1?'getSorterList':'getDeliveryList'
+				let data={
+						...this.searchData,
+		               
+						status:this.index,
+						
+					} 
+					console.log(1,JSON.stringify(data))
+				this.$http({
+					// apiName:apiName,
+					url:'/legwork/team/member/sorter/list/'+this.memberInfo.user_info.tid,
+					method:'POST',
+					// params:this.memberInfo.user_info.tid,
+					contentType:'application/json',
+					data:data
+				}).then(res=>{
+					// this.loaded=true
+					this.orderList = res.data.records
 				})
-				this.orderList = res
+				
 			},
 			allSelect() {
 				this.allSel = !this.allSel
@@ -922,7 +1007,7 @@
 					border-bottom: 2rpx solid #D8D8D8;
 					color: #909399;
 					font-size: 28rpx;
-					text-align: left;
+					text-align: center;
 				}
 				.mdCol1{
 					overflow-y: scroll;
@@ -931,6 +1016,7 @@
 						line-height: 60rpx;
 						color: #909399;
 						font-size: 36rpx;
+						text-align: center;
 					}
 					.mdItem.active{
 						color: #FFAE18;

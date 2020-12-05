@@ -3,29 +3,63 @@
 		<view class="main">
 			<h2 class="title">选择您所在团队：</h2>
 			<view class="selBox">
-				<view class="selItem" v-for="(school,i) in schools" :key="i" @click="selSchool(i)">
+				<view class="selItem" v-for="(team,i) in memberInfo.team_list" :key="team.tid" @click="selTeam(team.tid,i)">
 					<image src="/static/image/select.png" mode="" class="selected" v-if="index==i"></image>
 					<text class="noSelect" v-else></text>
-					<text :class="i==index?'name active':'name'">{{school}}</text>
+					<text :class="i==index?'name active':'name'">{{team.name}}</text>
 				</view>
 			</view>
 			
-		<view class="confirm">确定</view>
+		<view class="confirm" @tap="confirm">确定</view>
 		</view>
 	<!-- </view> -->
 </template>
 
 <script>
+	import {mapState} from 'vuex'
 	export default {
 		data() {
 			return {
                index:0,
-			   schools:['A团队','B团队','C团队','D团队']
+			   tid:''
+			   // teams:[]
 			};
 		},
+		async onLoad() {
+			
+			// console.log(123,infos)
+			// this.teams=infos.team_list
+			
+			
+			
+		},
+		computed:{
+			...mapState(['memberInfo'])
+		},
 		methods:{
-			selSchool(i){
+			selTeam(id,i){
 				this.index=i
+				this.tid=id
+			},
+			confirm(){
+				if(!this.tid){
+					this.tid=this.memberInfo.team_list[0].tid
+				}
+				this.$http({
+					apiName:'changeTeam',
+					method:'POST',
+					data:{
+						tid:this.tid
+					}
+				}).then(res=>{
+					uni.reLaunch({
+						url:'./school?tid='+this.tid
+					})
+				}).catch(err=>{
+					
+				})
+			
+				
 			}
 		}
 	}

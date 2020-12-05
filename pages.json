@@ -10,6 +10,16 @@
 		    
 		},
 		{
+		    "path" : "pages/author/index",
+		    "style" :                                                                                    
+		    {
+		        "navigationBarTitleText": "",
+		        "enablePullDownRefresh": false
+		    }
+		},
+		
+		
+		{
 		    "path" : "pages/select/team",
 		    "style" :                                                                                    
 		    {
@@ -44,15 +54,7 @@
             }
             
         }
-        ,{
-            "path" : "pages/author/index",
-            "style" :                                                                                    
-            {
-                "navigationBarTitleText": "",
-                "enablePullDownRefresh": false
-            }
-            
-        }
+        
     ],
 	"tabBar": {
 	    "color": "#909399",

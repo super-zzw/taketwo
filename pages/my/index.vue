@@ -1,16 +1,20 @@
 <template>
 	<view class="wrap">
 		<view class="mItem">
-			<view class="mTitle"></view>
+			<!-- <view class="mTitle"></view> -->
 			<view class="mBox mBox1">
 				<image src="https://wx.qlogo.cn/mmhead/PuL96pVthdbAm92VzhJcOA1x8gYkL2fRVibSXnyehCsE/0" class="mPic" mode=""></image>
 				<view class="name">
-					用户名
-					<text class="name2">分拣员</text>
+					{{memberInfo.user_info.name}}
+					<text class="name2">{{currentRole==1?'分拣员':'配送员'}}</text>
 				</view>
 				<view class="phone">
-					13788888888
+					{{memberInfo.user_info.mobile}}
 				</view>
+				<picker  :range="roleArr"  @change="bindDateChange" class="picker" v-if="roles.length>1">
+				       <view class="uni-input">切换身份</view>
+					   <image class="team12" src="../../static/image/you1.png" mode="widthFix"></image>
+				 </picker>
 				<view class="team" data-target="bottomModal" @tap="showModal">
 					A团队-广州科技职业技术大学
 					<image class="team12" src="../../static/image/you1.png" mode="widthFix"></image>
@@ -23,20 +27,20 @@
 				<view class="box1">
 					<image src="../../static/image/bin.png" class="boxIcon" mode="widthFix"></image>
 					<view class="mTabs">
-						<view class="mTab" v-for="(item,index) in tabs" :key="index" :class="activeTab0 == index ? 'active' : ''">{{item}}</view>
+						<view class="mTab" v-for="(item,index) in tabs" :key="index" :class="activeTab0 == index ? 'active' : ''" @tap="activeTab0=index">{{item}}</view>
 					</view>
 				</view>
 				<view class="box2">
 					<view class="box2Item">
-						<view class="nms">15</view>
+						<view class="nms">{{sorterData.waitOrder}}</view>
 						<view class="statu">待接单</view>
 					</view>
 					<view class="box2Item">
-						<view class="nms">15</view>
+						<view class="nms">{{sorterData.endSorter}}</view>
 						<view class="statu">已分拣</view>
 					</view>
 					<view class="box2Item">
-						<view class="nms">8</view>
+						<view class="nms">{{sorterData.endChargeback}}</view>
 						<view class="statu">已退单</view>
 					</view>
 				</view>
@@ -48,21 +52,25 @@
 				<view class="box1">
 					<image src="../../static/image/bin.png" class="boxIcon" mode="widthFix"></image>
 					<view class="mTabs">
-						<view class="mTab" v-for="(item,index) in tabs" :key="index" :class="activeTab0 == index ? 'active' : ''">{{item}}</view>
+						<view class="mTab" v-for="(item,index) in tabs" :key="index" :class="activeTab1 == index ? 'active' : ''" @tap="activeTab1=index">{{item}}</view>
 					</view>
 				</view>
 				<view class="box2">
 					<view class="box2Item">
-						<view class="nms">15</view>
+						<view class="nms">{{deliveryData.waitOrder}}</view>
 						<view class="statu">待接单</view>
 					</view>
 					<view class="box2Item">
-						<view class="nms">15</view>
-						<view class="statu">已分拣</view>
+						<view class="nms">{{deliveryData.waitDelivery}}</view>
+						<view class="statu">待配送</view>
 					</view>
 					<view class="box2Item">
-						<view class="nms">8</view>
-						<view class="statu">已退单</view>
+						<view class="nms">{{deliveryData.doneDelivery}}</view>
+						<view class="statu">已完成</view>
+					</view>
+					<view class="box2Item">
+						<view class="nms">{{deliveryData.confirmedDelivery}}</view>
+						<view class="statu">已确认</view>
 					</view>
 				</view>
 			</view>
@@ -79,15 +87,10 @@
 							所在团队
 						</view>
 						<view class="mdCol1">
-							<view class="mdItem active">
-								A团队
+							<view :class="team_active==i?'mdItem active':'mdItem'" v-for="(item,i) in memberInfo.team_list" @tap="team_active=i">
+								{{item.name}}
 							</view>
-							<view class="mdItem">
-								B团队
-							</view>
-							<view class="mdItem">
-								C团队
-							</view>
+						
 						</view>
 					</view>
 					<view class="mdCol mdCol2">
@@ -124,22 +127,86 @@
 </template>
 
 <script>
+	import {mapState} from 'vuex'
 	export default {
 		data() {
 			return {
 				tabs:["全部","今日","近7天","近30日"],
+				roleArr:['分拣员','配送员'],
+				team_active:0,
 				activeTab0:1,
 				activeTab1:1,
-				modalName:null
+				modalName:null,
+				sorterData:null,
+				deliveryData:null
+				
 			};
 		},
+		created() {
+			this.initData()
+		},
+		computed:{
+			...mapState(['roles','currentRole','memberInfo'])
+		},
+		watch:{
+			activeTab0(){
+				this.getSorterData()
+			},
+			activeTab1(){
+				this.getDeliveryData()
+			}
+		},
 		methods:{
+			async initData(){
+				uni.showLoading({
+					title:'加载中...'
+				})
+				if(this.roles.length>1){
+					await this.getSorterData()
+					this.getDeliveryData()
+				}else{
+					this.currentRole==1?this.getSorterData():this.getDeliveryData()
+				}
+				uni.hideLoading()
+			},
 			showModal(e) {
 				this.modalName = e.currentTarget.dataset.target
 			},
 			hideModal(e) {
 				this.modalName = null
 			},
+			bindDateChange(e){
+				console.log(e)
+				let data=e.detail.value==0?1:2
+				this.$store.commit('setRole',data) 
+			},
+			getSorterData(){
+				let date=this.activeTab0==0?4:this.activeTab0
+				this.$http({
+					apiName:'getSorterData',
+					method:'POST',
+					data:{
+						date,
+						tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.sorterData=res.data
+				}).catch(err=>{})
+			},
+			getDeliveryData(){
+				let date=this.activeTab1==0?4:this.activeTab1
+				this.$http({
+					apiName:'getDeliveryData',
+					method:'POST',
+					data:{
+						date,
+						tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.deliveryData=res.data
+				}).catch(err=>{})
+			},
+			
 		}
 	}
 </script>
@@ -200,10 +267,28 @@
 			.phone{
 				color: #606266;
 				font-size: 28rpx;
+				margin-bottom: 30rpx;
+			}
+			.picker{
+				background-color: #F1F2F4;
+				
+				border-radius: 10rpx;
+				padding: 8rpx 36rpx;
+				width: fit-content;
+				margin: 0 auto 15rpx;
+				view{
+					display: inline-block;
+				}
+				image{
+					vertical-align: middle;
+					nav-left: 12rpx;
+					width: 28rpx;
+					height: auto;
+				}
 			}
 			.team{
 				margin: auto;
-				margin-top: 36rpx;
+				// margin-top: 36rpx;
 				background-color: #F1F2F4;
 				border-radius: 10rpx;
 				display: flex;
@@ -261,7 +346,7 @@
 				padding-top: 44rpx;
 				padding-bottom: 20rpx;
 				.box2Item{
-					flex: 0 0 33.3%;
+					flex: 1;
 					text-align: center;
 					.nms{
 						color: #181819;

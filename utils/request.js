@@ -19,14 +19,17 @@ export function http(opt) {
 	return new Promise((resolve, reject) => {
 		uni.request({
 			header:{
-				"Content-Type":"application/x-www-form-urlencoded",
-				"hyjy-SessionId":uni.getStorageSync("session") || "",
+				"Content-Type":opt.contentType||"application/x-www-form-urlencoded",
+				"Authorization":uni.getStorageSync("token") || "",
+				
 			},
-			url: baseUrl + Api[opt.apiName],
+			url: baseUrl +(opt.apiName?Api[opt.apiName]:opt.url),
 			method:opt.method || 'GET',
+			params:opt.params,
 			data:_data,
 			success:res => {
 				if(res.statusCode == 200){
+					
 					if(res.data.ret === 0){
 					      resolve(res.data)
 					     }else{
@@ -40,8 +43,13 @@ export function http(opt) {
 					      },1500)
 					     }
 				} else {
+					if(res.statusCode === 401){
+						checkStatus(opt)
+					}else{
+						reject('服务器错误')
+					}
 					uni.hideLoading()
-					reject('服务器错误')
+					
 				}
 			},
 			fail: err => {
@@ -50,6 +58,62 @@ export function http(opt) {
 			}
 		})
 	})
+}
+
+
+
+
+// 默认纸条
+let isRefreshing = true
+function checkStatus(opt) {
+  
+    // 刷新token的函数,这需要添加一个开关，防止重复请求
+    if(isRefreshing){
+        refreshTokenRequst()
+    }
+    isRefreshing = false;
+    // 将当前的请求保存在观察者数组中
+      const retryOriginalRequest = new Promise((resolve) => {
+                addSubscriber(()=> {
+                    resolve(http(opt))
+                })
+            });
+            return retryOriginalRequest;
+  }
+
+
+
+function refreshTokenRequst(){
+    let data;
+    const refreshToken = uni.getStorageSync('reToken');
+    data={
+        token:refreshToken,
+    }
+    http({
+       apiName:'refreshToken',
+        method: 'POST',
+        data,
+    }).then((res)=>{
+        // 刷新完成后,将刷新token和refreshToken存储到本地
+     uni.setStorageSync('token',res.token); // 存token
+     uni.setStorageSync('reToken',res.reToken); // 存刷新token
+        // 并且将所有存储到观察者数组中的请求重新执行。
+        onAccessTokenFetched();
+        // 纸条撕掉
+        isRefreshing = true;
+    });
+}
+// 观察者
+let subscribers = [];
+function onAccessTokenFetched() {
+    subscribers.forEach((callback)=>{
+        callback();
+    })
+    subscribers = [];
+}
+
+function addSubscriber(callback) {
+    subscribers.push(callback)
 }
 
 export function httpAll(opts) {

@@ -78,14 +78,13 @@ export default{
 		  }else {
 		    date = new Date;
 		  }
-		  let Y = date.getFullYear() + '-';
+		  let Y = date.getFullYear();
 		  let M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1);
-		  let D = date.getDate() < 10 ? '0' + date.getDate() + ' ' : date.getDate() + ' ';
-		  let h = date.getHours() < 10 ? '0' + date.getHours()   : date.getHours();
+		  let D = date.getDate() < 10 ? '0' + date.getDate(): date.getDate();
+		  let h = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
 		  let m = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
 		  let s = date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
-		  if(x === 1){return (Y+M+'-'+D+h+':'+m);}//2017-09-29 21:30
-		  if(x === 4){return (Y+M+'-'+D+h+':'+"00");}//2017-09-29 21:00
+		  if(x === 1){return (Y+'/'+M+'/'+D+' '+h+':'+m);}//2017-09-29 21:00
 		  if(x === 2){return (Y+M+'-'+D+':'+"00"+":"+"00");}//2019-09-29 00:00
 		  if(x === 3){return (Y+M+'-'+D);}//2019-09-29
 		  if(x === 5){return (Y+M+'-'+"01");}//2019-09-01
@@ -184,8 +183,41 @@ export default{
 		http({
 			apiName:'config'
 		}).then(res=>{
-			console.log(123,res)
+			// console.log(123,res)
 			store.commit('setConfig',res.data)
+		}).catch(err=>{
+			// console.log(456,err)
+		})
+	},
+	getMemberInfo(){
+		return new Promise((resolve,reject)=>{
+			http({
+					apiName:'getMemberInfo'
+				}).then(res=>{
+					resolve(res)
+					// console.log('zzw',res)
+					
+					
+				}).catch(err=>{
+					reject(err)
+				})
+		})
+		
+		
+		
+	},
+	refreshToken(){
+		http({
+			apiName:'refreshToken',
+			method:'POST',
+			data:{
+				token:uni.getStorageSync('reToken')
+			}
+		}).then(res=>{
+			// console.log(123,res)
+			uni.setStorageSync('token',res.token); // 存token
+			uni.setStorageSync('reToken',res.reToken); // 存刷新token
+			// store.commit('setConfig',res.data)
 		}).catch(err=>{
 			console.log(456,err)
 		})

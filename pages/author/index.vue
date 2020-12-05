@@ -58,18 +58,33 @@
 					apiName:"login",
 					method:"POST",
 					data:_data,
-				}).then(res => {
+				}).then(async res => {
 					console.log(res)
-					uni.setStorageSync('token',res.token); // 存session
-					uni.setStorageSync('userInfo',res.wechat_info); // 存session
-					uni.reLaunch({
-						url:'../order/index'
-					})
+					uni.setStorageSync('token',res.token); // 存token
+					uni.setStorageSync('reToken',res.reToken); // 存刷新token
+					// uni.setStorageSync('userInfo',res.wechat_info); // 存session
+				 this.$getMemberInfo().then(res=>{
+					 // console.log(res)
+					 this.$store.commit('setMemberInfo',res)
+				 				if(!res.user_info.tid){
+				 						uni.reLaunch({
+				 								url:'/pages/select/team'
+				 							})
+				 						}else{
+											this.$isResolve()
+				 							uni.reLaunch({
+				 								url:'/pages/order/index'
+				 							})
+											
+				 						}
+				 })
+					
+					
 					
 				}).catch(err => {
-					this.hideModal()
-					console.log(2,err)
-					if(err.data.ret==11003){
+					// this.hideModal()
+					console.log(212,err)
+					if(err.ret==11003){
 						this.showModal()
 					}
 					
@@ -95,6 +110,8 @@
 					uni.reLaunch({
 						url:'../order/index'
 					})
+					//  this.$config()
+					this.$getMemberInfo()
 					this.hideModal()
 				}).catch(err => {
 					this.hideModal()
