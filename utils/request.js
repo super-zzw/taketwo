@@ -1,5 +1,6 @@
 import Api from './api.js'
 import utils from "./method.js"
+import qs from 'querystring'
 var test = false;
 var _baseUrl = '';
 if (test) {
@@ -26,7 +27,7 @@ export function http(opt) {
 			url: baseUrl +(opt.apiName?Api[opt.apiName]:opt.url),
 			method:opt.method || 'GET',
 			params:opt.params,
-			data:_data,
+			data:_data ,
 			success:res => {
 				if(res.statusCode == 200){
 					

@@ -72,6 +72,7 @@ export default{
 	},
 	//将时间戳转化为格式化日期和时间
 	unixToDatetime(unix,x=1){
+		var unix=Number(unix)
 		  var date = null;
 		  if(unix){
 		    date = new Date(unix);

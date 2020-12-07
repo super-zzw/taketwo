@@ -13,6 +13,8 @@ export default{
 	getDeliveryList:'/legwork/team/member/delivery/list' , //配送订单列表
 	getRole:'/legwork/team/member/Role', //当前角色
 	getSorterData:'/legwork/team/member/sorter/data',  //分拣接单数据
-	getDeliveryData:'/legwork/team/member/delivery/data'  //配送接单数据
+	getDeliveryData:'/legwork/team/member/delivery/data'  ,//配送接单数据
+	orderDetail:'/legwork/team/member/sorter/detail', //订单详情
+	sorterReceiving:'/legwork/team/member/sorter/receiving', //分拣接单
 
 }

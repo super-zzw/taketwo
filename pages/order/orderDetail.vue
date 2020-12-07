@@ -3,50 +3,65 @@
 		<view class="contentBox">
 			<view class="status">
 				订单状态：
-			<text class="txt">{{status}}</text>
+				<block v-if="currentRole==1">
+					<text class="txt" v-if="detail.status==1">待接单</text>
+					<text class="txt" v-if="detail.status==2">待分拣</text>
+					<text class="txt" v-if="detail.status==3">已分拣</text>
+					<text class="txt" v-if="detail.status==4">代配送</text>
+					<text class="txt" v-if="detail.status==5">已退单</text>
+				</block>
+				<block v-if="currentRole==2">
+					<text class="txt" v-if="detail.status==1">待接单</text>
+					<text class="txt" v-if="detail.status==2">配送中</text>
+					<text class="txt" v-if="detail.status==3">已完成</text>
+					<text class="txt" v-if="detail.status==4">已确认</text>
+				</block>
+			
 			<!-- <text class="txt" v-if="status=='待配送'">待配送</text> -->
 			</view>
 			<view class="sec sec1">
 				<view class="head">
-					<text class="left">物流公司：菜鸟裹裹</text>
-					<text class="right" v-if="status=='待配送'||status=='已完成'||status=='已确认'||status=='已分拣'||status=='待接单'">标签：科大宿舍楼10栋</text>
+					<text class="left">物流公司：{{detail.logisticsCompany}}</text>
+					<text class="right" v-if="!((detail.status==1||detail.status==2)&&currentRole==1)">标签：{{detail.labelName}}</text>
 				</view>
 				<view class="conts">
-					<view class="code" v-if="status!='待接单'">
+					<view class="code" v-if="detail.status!=1&&detail.status!=5">
 						<text class="desc">取件码：</text>
 						<view class="num">
-							98765
+							{{detail.fetchCode}}
 							<image src="/static/image/copy.png" mode="" @click="copy"></image>
 						</view>
 					</view>
 					<view class="infoBox">
 						<image src="../../static/image/send.png" mode="" class="icon"></image>
 						<view class="info">
-							<text class="t1">广州科大白云校区10栋12楼1206室</text>
-							<text class="t2">周同学&ensp;159****9999</text>
+							<text class="t1">{{detail.receiverAddress}}</text>
+							<text class="t2">{{detail.receiverName}}&ensp;{{detail.receiverPhone}}</text>
 						</view>
 					</view>
 					<view class="infoBox mt40">
 						<image src="../../static/image/receive.png" mode="" class="icon"></image>
 						<view class="info">
-							<text class="t1">广州科大白云校区 旧图书馆1楼102商铺</text>
+							<text class="t1">{{detail.logisticsAddress}}</text>
 			
 						</view>
 					</view>
 				</view>
 			</view>
 			<view class="sec sec2">
-				<view class="txt" v-if="status!='待接单'">订单流水号：2020847383482 <image src="/static/image/copy.png" mode="" @click="copy"></image>
+				<view class="txt" v-if="!(detail.status==1&&currentRole==1)">订单流水号：{{detail.orderNum}} <image src="/static/image/copy.png" mode="" @click="copy"></image>
 				</view>
-				<text class="txt" >订单类型：加急</text>
-				<text class="txt">包裹类型：大包裹</text>
-				<text class="txt">收货时间：2020/11/24 中午</text>
-				<text class="txt" v-if="status!='待接单'">下单时间：2020/11/24 9:28</text>
-				<text class="txt">订单备注：易碎物品请轻拿轻放</text>
-				<view class="txt">总价：<text class="price">¥20</text></view>
+				<text class="txt" v-if="detail.type">订单类型：{{detail.type==1?'定时送':'加急送'}}</text>
+				<text class="txt" v-if="detail.parcelType">包裹类型：{{detail.parcelType==1?'大包裹':'小包裹'}}</text>
+				<text class="txt">收货时间：{{detail.receivingStartTime|dateFormat}}-{{detail.receivingEndTime|dateFormat(8)}}</text>
+				<text class="txt" v-if="status!='待接单'">下单时间：{{detail.createTime|dateFormat}}</text>
+				<text class="txt" v-if="detail.remark">订单备注：{{detail.remark}}</text>
+				<view class="txt">总价：<text class="price">¥{{detail.paymentAmount}}</text></view>
 			</view>
-			<view class="sec sec3" v-if="status!='待接单'">
-				<text class="txt">接单时间：2020/10/24 10:30</text>
+			
+			<view class="sec sec3" v-if="!(detail.status==1&&currentRole==1)">
+				<text class="txt" v-if="detail.status==1">分拣接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
+				<text class="txt" v-else>接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
 				<block v-if="status!='待分拣'">
 					<text class="txt">分拣时间：2020/11/24 13:30</text>
 					<block v-if="status!='已分拣'&&status!='待接单'">
@@ -64,10 +79,10 @@
 			</view>
 		</view>
 		
-        <view class="bottom1" v-if="status=='待接单'">
+        <view class="bottom1" v-if="detail.status==1">
 			<view class="jiedanBtn">接单</view>
 		</view>
-		<view class="bottom" v-if="status!='已退单'&&status!='待接单'">
+		<view class="bottom" v-else>
 			<view class="box">
 				<view class="contact">
 					<image src="/static/image/contact.png" mode=""></image>
@@ -193,12 +208,18 @@
 </template>
 
 <script>
+	import {
+		mapState
+	} from 'vuex';
+	import utils from '../../utils/method.js'
 	import DatePicker from '../../components/datePicker.vue'
 	export default {
 		components:{DatePicker},
 		data() {
 			return {
-             status:'待配送',
+				orderNum:null,
+				detail:{},
+          
 			   modalName:null,
 			   reasons:['包裹大小选择错误','有违禁品','送货地址超出送达范围','其他原因'],
 			   tagsList:['科大宿舍楼10栋','科大宿舍楼9栋','科大宿舍楼8栋','科大宿舍楼7栋'],
@@ -210,12 +231,40 @@
 			   delayReasonsIndex:0
 			};
 		},
+		computed: {
+			...mapState(['memberInfo','currentRole'])
+		},
+		onLoad(opt) {
+			if(opt.num){
+				this.orderNum=opt.num
+			}
+			this.getOrderDetail()
+		},
+		filters:{
+			dateFormat(val,type){
+				// console.log(val)
+				console.log(utils.unixToDatetime(val,type) )
+				return utils.unixToDatetime(val,type) 
+			}
+		},
 		methods: {
 			showModal(e){
 				this.modalName = e.currentTarget.dataset.target
 			},
 			hideModal(name='null') {
 				this.modalName = name
+			},
+			getOrderDetail(){
+				this.$http({
+					apiName:'orderDetail',
+					method:'POST',
+					data:{
+						orderNum:this.orderNum,
+						tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.detail=res.data
+				})
 			},
 			copy() {
 				uni.setClipboardData({
@@ -320,6 +369,7 @@
 			.infoBox {
 				display: flex;
 				align-items: center;
+				align-items: flex-start;
 
 				&.mt40 {
 					margin-top: 40rpx;
@@ -334,7 +384,7 @@
 				.info {
 					display: flex;
 					flex-direction: column;
-
+                     width: 90%;
 					.t1 {
 
 						font-size: 34rpx;

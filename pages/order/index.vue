@@ -9,16 +9,16 @@
 				<image src="/static/image/search.png" mode="" class="icon" @click="search"></image>
 			</view>
 		</view>
-		<block v-if="orderList.length>0">
+		<block v-if="orderList.length>0&&loaded">
 			<view class="orderBox">
 				<view class="orderItem" v-for="(item,i) in orderList" :key="i" >
 					<view class="order-head">
 						<view class="left">
 							<text class="s1" @click="select(1,i)" v-if="!item.selected"></text>
-							<image src="/static/image/select.png" mode="" class="selected" @click="select(-1,i)" v-if="item.selected"></image>
+							<image src="/static/image/select.png" mode="" class="selected" @click="select(-1,i,item.id)" v-if="item.selected"></image>
 						</view>
 						<view class="right">
-							<image src="/static/image/time.png" mode="" class="timeIcon" v-if="index!=1&&index!=2"></image>
+							<image src="/static/image/time.png" mode="" class="timeIcon" ></image>
 							<text class="time">{{item.createTime|dateFormat}}</text>
 							<block v-if="currentRole==1">
 								<text class="status" v-if="item.status==1">待接单</text>
@@ -36,8 +36,8 @@
 			
 						</view>
 					</view>
-					<view class="order-cont" @click="toDetail">
-						<view class="code" v-if="iteem.fetchCode">
+					<view class="order-cont" @tap="toDetail(item.orderNum)">
+						<view class="code" v-if="item.status!=1">
 							<text class="desc">取件码：</text>
 							<view class="num">
 								{{item.fetchCode}}
@@ -71,12 +71,12 @@
 					<image src="/static/image/select.png" mode="" class="selected" v-else></image>
 					<text class="all">本页全选</text>
 				</view>
-				<view class="right" v-if="index==1">接单</view>
-				<view class="right" v-if="index==2&&currentRole==1">分拣</view>
+				<view class="right" v-if="index==1" @tap="sorterReceiving">接单</view>
+				<view class="right" v-if="index==2&&currentRole==1" @tap="toSort">分拣</view>
 				<view class="right" v-if="index==2&&currentRole==2">配送完成</view>
 			</view>
 		</block>
-		<Empty v-else></Empty>
+		<Empty  v-if="orderList.length==0&&loaded"></Empty>
 		<chunLei-popups v-model="bool" :popData="data" @tapPopup="tapPopup" :x="344" :y="60" placement="top-end">
 		</chunLei-popups>
 
@@ -287,7 +287,9 @@
 				receivingTxt:'请选择收货时间',
 				ordersBeginTimeTxt:'下单开始时间',
 				ordersEndTimeTxt:'下单结束时间',
-				dateType:''
+				dateType:'',
+				selectDataList:[]
+				// sorterData:[]
 			};
 		},
 		async onLoad() {
@@ -362,6 +364,49 @@
 				
 				this.modalName = name
 			},
+			// 分拣接单
+			sorterReceiving(){
+				let data=JSON.stringify(this.selectDataList) 
+				
+			
+				this.$http({
+					url:'/legwork/team/member/sorter/receiving/'+this.memberInfo.user_info.tid,
+					// url:'/legwork/team/member/sorter/receiving',
+					method:'POST',
+					
+				    // contentType:'application/json',
+					data:{
+						// sorterReceivingPOJO:this.sorterReceivingData
+						sorterReceivingPOJO:data
+						// tid:this.memberInfo.user_info.tid
+					}
+					// data: data
+				}).then(res=>{
+					uni.showToast({
+						title:'接单成功'
+					})
+					this.getOrderList()
+				})
+			},
+			// 订单分拣
+			toSort(){
+				let data=JSON.stringify(this.selectDataList) 
+				this.$http({
+					url:'/legwork/team/member/sorter/sorter/'+this.memberInfo.user_info.tid,
+					method:'POST',
+					data:{
+						// sorterReceivingPOJO:this.sorterReceivingData
+						sorterPOJO:data
+						// tid:this.memberInfo.user_info.tid
+					}
+					// data: data
+				}).then(res=>{
+					uni.showToast({
+						title:'分拣成功'
+					})
+					this.getOrderList()
+				})
+			},
 			selTime(val){
 				console.log(val)
 				var date=val.year+'/'+val.month+'/'+parseInt(val.date)
@@ -421,22 +466,44 @@
 			tapPopup(item) {
 				console.log(item)
 			},
-			select(val, index) {
+			select(val, index,id) {
 
 				if (val == -1) {
-
 					this.$set(this.orderList[index], 'selected', false)
-
+                    this.selectDataList=this.selectDataList.filter(item=>{
+						return item.id!=id
+					})
 				} else {
-
+                    
 					this.$set(this.orderList[index], 'selected', true)
-
-
-					// this.orderList[index].selected=true
+					let userInfo=this.memberInfo.user_info
+					let data
+					if(this.currentRole==1&&this.index==1){
+						data={
+							id:this.orderList[index].id,
+							orderNum:this.orderList[index].orderNum,
+							sorterId:userInfo.uid,
+							sorterName:userInfo.name,
+							sorterPhone:userInfo.mobile
+						}
+					}else if(this.currentRole==1&&this.index==2){
+						data={
+							 id: this.orderList[index].id,
+							 labelId: 1,
+							 orderNum: this.orderList[index].orderNum,
+							 sorterId: this.orderList[index].sorterId
+						}
+					}
+					
+					// 
+                    this.selectDataList.push(data)
+                    // this.sorterReceivingData.push(JSON.stringify(data))
+					// console.log(JSON.stringify(this.sorterReceivingData))
 				}
 				console.log(val)
 			},
 			getOrderList() {
+				this.loaded=false
 				let apiName=this.currentRole==1?'getSorterList':'getDeliveryList'
 				let data={
 						...this.searchData,
@@ -453,27 +520,45 @@
 					contentType:'application/json',
 					data:data
 				}).then(res=>{
-					// this.loaded=true
+					this.loaded=true
 					this.orderList = res.data.records
 				})
 				
 			},
 			allSelect() {
 				this.allSel = !this.allSel
-
-				this.orderList.forEach(item => {
+				let userInfo=this.memberInfo.user_info
+                this.orderList.forEach(item=>{
+					
 					if (this.allSel) {
-						item.selected = true
+							item.selected = true
+							let data={
+								id:item.id,
+								orderNum:item.orderNum,
+								sorterId:userInfo.uid,
+								sorterName:userInfo.name,
+								sorterPhone:userInfo.mobile
+							}
+							this.selectDataList.push(data)
 					} else {
 						item.selected = false
+						this.selectDataList=[]
 					}
-
 				})
+				// this.orderList.forEach(item => {
+				// 	if (this.allSel) {
+				// 		item.selected = true
+				// 	} else {
+				// 		item.selected = false
+				// 	}
+
+				// })
 
 			},
-			toDetail() {
+			toDetail(num) {
+				console.log(num)
 				uni.navigateTo({
-					url: './orderDetail'
+					url: './orderDetail?num='+num
 				})
 			},
 			copy() {
@@ -503,8 +588,12 @@
 		background: #fff;
 
 		display: flex;
-
+position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 10;
 		.tabsBox {
+			
 			padding: 20rpx 32rpx;
 			// padding-left: 32rpx;
 			// padding-: 32rpx;
@@ -557,6 +646,7 @@
 	.orderBox {
 		margin: 0 32rpx;
 		padding: 32rpx 0;
+		padding-top: 130rpx;
 		// height: calc(100vh - 96rpx - 104rpx);
 		overflow: scroll;
 		background: #F5F6F8;
@@ -652,7 +742,7 @@
 					.main {
 						display: flex;
 						flex-direction: column;
-
+                        width: 86%;
 						.t1 {
 							margin-bottom: 4rpx;
 
@@ -661,7 +751,7 @@
 							font-weight: 500;
 							color: #181819;
 							line-height: 48rpx;
-
+                        
 							overflow: hidden; //超出的文本隐藏
 							text-overflow: ellipsis; //溢出用省略号显示
 
