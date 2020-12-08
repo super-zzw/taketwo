@@ -1,11 +1,11 @@
 import Api from './api.js'
 import utils from "./method.js"
 import qs from 'querystring'
-var test = false;
+var test = true;
 var _baseUrl = '';
 if (test) {
-	
-	_baseUrl = 'http://mgm-api.dev.gzcyou.com/api';  //内网穿透地址
+	 baseUrl = 'http://legwork-wechatgateway.dev.gzcyou.com'; 
+	// _baseUrl = 'http://mgm-api.dev.gzcyou.com/api';  //内网穿透地址
 } else {
 	// _baseUrl = 'https://api.migmkids.com/api';  //正式地址
 	_baseUrl = 'http://192.168.1.17:7600';  //本地地址

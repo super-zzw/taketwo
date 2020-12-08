@@ -91,7 +91,7 @@
 				<text class="title">订单搜索</text>
 				<view class="inputBox">
 					<input type="text" v-model="searchData.searchValue" placeholder="请输入姓名、电话、订单号" />
-					<image src="/static/image/search.png" mode="" @tap="getOrderList"></image>
+					<image src="/static/image/search.png" mode="" @tap="confirm"></image>
 				</view>
 				<view class="content">
 					<view class="tt">
@@ -387,6 +387,18 @@
 				this.getOrderList()
 
 			},
+			initSearchBox(){
+				this.addressTxt='请选择收货地址',
+				this.tagsTxt='请选择订单标签'
+				this.receivingTxt='请选择收货时间'
+				this.ordersBeginTimeTxt='下单开始时间'
+				this.ordersEndTimeTxt='下单结束时间'
+				this.selectAddr= [0, 0],
+				this.wuliuIndex=-1,
+				this.orderIndex=-1,
+				this.parcelIndex=-1
+				
+			},
 			getLabelList() {
 				this.$http({
 					apiName: 'getLabelList',
@@ -577,12 +589,13 @@
 				this.modalName = 'search'
 			},
 			reset() {
-
+this.initSearchBox()
 			},
 			confirm() {
                 this.getOrderList()
 				this.modalName=null
 				this.searchData={}
+				this.initSearchBox()
 			},
 			showFilter() {
 				this.bool = true
