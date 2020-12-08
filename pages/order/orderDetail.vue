@@ -22,7 +22,7 @@
 			<view class="sec sec1">
 				<view class="head">
 					<text class="left">物流公司：{{detail.logisticsCompany}}</text>
-					<text class="right" v-if="!((detail.status==1||detail.status==2)&&currentRole==1)">标签：{{detail.labelName}}</text>
+					<text class="right" v-if="!((detail.status==1||detail.status==2||detail.status==5)&&currentRole==1)">标签：{{detail.labelName}}</text>
 				</view>
 				<view class="conts">
 					<view class="code" v-if="detail.status!=1&&detail.status!=5">
@@ -54,7 +54,7 @@
 				<text class="txt" v-if="detail.type">订单类型：{{detail.type==1?'定时送':'加急送'}}</text>
 				<text class="txt" v-if="detail.parcelType">包裹类型：{{detail.parcelType==1?'大包裹':'小包裹'}}</text>
 				<text class="txt">收货时间：{{detail.receivingStartTime|dateFormat}}-{{detail.receivingEndTime|dateFormat(8)}}</text>
-				<text class="txt" v-if="status!='待接单'">下单时间：{{detail.createTime|dateFormat}}</text>
+				<text class="txt" >下单时间：{{detail.createTime|dateFormat}}</text>
 				<text class="txt" v-if="detail.remark">订单备注：{{detail.remark}}</text>
 				<view class="txt">总价：<text class="price">¥{{detail.paymentAmount}}</text></view>
 			</view>
@@ -62,41 +62,43 @@
 			<view class="sec sec3" v-if="!(detail.status==1&&currentRole==1)">
 				<text class="txt" v-if="detail.status==1">分拣接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
 				<text class="txt" v-else>接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
-				<block v-if="status!='待分拣'">
-					<text class="txt">分拣时间：2020/11/24 13:30</text>
-					<block v-if="status!='已分拣'&&status!='待接单'">
-						<text class="txt" >配送接单时间：2020/11/24 16:30</text>
-						<text class="txt" v-if="status!='待配送'">完成配送时间：2020/11/24 16:30</text>
-					</block >
+				<!-- <block v-if="status!='待分拣'"> -->
+					<text class="txt" v-if="!(detail.status==2&&currentRole==1)">分拣时间：{{detail.sorterTime|dateFormat}}</text>
+				
+						<text class="txt" v-if="detail.status==4">配送接单时间：2020/11/24 16:30</text>
+						<!-- <text class="txt" v-if="status!='待配送'">完成配送时间：2020/11/24 16:30</text> -->
 					
-					<block v-if="status=='已退单'">
-						<text class="txt txt1">退单原因：包裹超重，需要增加费用</text>
-						<view class="txt">修改后总价：<text style="color:#FF0000">¥30</text></view>
-					</block>
-				</block>
+					
+				        <block v-if="detail.status==5">
+							<text class="txt txt1">退单原因：包裹超重，需要增加费用</text>
+							<view class="txt">修改后总价：<text style="color:#FF0000">¥30</text></view>
+						</block>
+						
+				
+				
 				
 				
 			</view>
 		</view>
 		
         <view class="bottom1" v-if="detail.status==1">
-			<view class="jiedanBtn">接单</view>
+			<view class="jiedanBtn" @tap="sorterReceiving">接单</view>
 		</view>
-		<view class="bottom" v-else>
+		<view class="bottom" v-if="detail.status==2">
 			<view class="box">
 				<view class="contact">
 					<image src="/static/image/contact.png" mode=""></image>
 					<text>联系下单人</text>
 				</view>
-				<block v-if="status=='待分拣'">
+				<block v-if="detail.status==2">
 					<view class="btn btn1" data-target="tuidan" @tap="showModal">退单</view>
 					<view class="btn btn2" data-target="fenjian" @tap="showModal">分拣</view>
 					
 				</block>
-				<block v-if="status=='待配送'">
+				<!-- <block v-if="detail.status==2">
 					<view class="btn btn1" data-target="yanchi" @tap="showModal">延迟配送</view>
 					<view class="btn btn2" data-target="fenjian" @tap="showModal">配送完成</view>
-				</block>
+				</block> -->
 			</view>
 		</view>
 		<!-- 退单 -->
@@ -106,11 +108,11 @@
 				<view class="content">
 					<view class="t1">
 						<text class="label">订单原总价：</text>
-						<text class="label price">¥20</text>
+						<text class="label price">¥{{detail.paymentAmount}}</text>
 					</view>
 					<view class="t2">
 						<text class="label">修改后总价：</text>
-						<input type="text" v-model="inputValue" class="input"/>
+						<input type="number" v-model="inputValue" class="input" />
 					</view>
 					<view class="t3">
 					<text class="label">退单原因：</text>
@@ -125,7 +127,7 @@
 						
 					</view>
 					<view class="btns">
-						<view class="btn btn1" @tap="hideModal">确定退单</view>
+						<view class="btn btn1" @tap="chargeback">确定退单</view>
 						<view class="btn btn2" @tap="hideModal">取消</view>
 					</view>
 					</view>
@@ -140,20 +142,20 @@
 					<view class="content">
 						<text class="label">订单标签：</text>
 						<view class="tagBox" @click="fenjianFlag=2">
-							<text class="name">{{tagsList[tagIndex]}}</text>
+							<text class="name">{{labelList[tagIndex].label}}</text>
 							<image src="/static/image/you1.png" mode=""></image>
 						</view>
 					</view>
 					<view class="btns">
 						<view class="btn btn2" @tap="hideModal">取消</view>
-						<view class="btn btn1" @tap="hideModal">分拣完成</view>
+						<view class="btn btn1" @tap="sortConfirm">分拣完成</view>
 					</view>
 				</block>
 				<block v-else>
 					<text class="title">选择订单标签</text>
 					<view class="tagsList">
-						<view v-for="(item,i) in tagsList" :key="i" :class="tagIndex==i?'tag active':'tag'" @click="tagIndex=i">
-						{{item}}	
+						<view v-for="(item,i) in labelList" :key="i" :class="tagIndex==i?'tag active':'tag'" @click="tagIndex=i">
+						{{item.label}}		
 						</view>
 					</view>
 					<view class="btns btns1">
@@ -222,7 +224,7 @@
           
 			   modalName:null,
 			   reasons:['包裹大小选择错误','有违禁品','送货地址超出送达范围','其他原因'],
-			   tagsList:['科大宿舍楼10栋','科大宿舍楼9栋','科大宿舍楼8栋','科大宿舍楼7栋'],
+			   // tagsList:['科大宿舍楼10栋','科大宿舍楼9栋','科大宿舍楼8栋','科大宿舍楼7栋'],
 			   reasonIndex:0,
 			   inputValue:'',
 			   fenjianFlag:1,
@@ -232,7 +234,7 @@
 			};
 		},
 		computed: {
-			...mapState(['memberInfo','currentRole'])
+			...mapState(['memberInfo','currentRole','labelList'])
 		},
 		onLoad(opt) {
 			if(opt.num){
@@ -273,6 +275,109 @@
 						console.log('success');
 					}
 				});
+			},
+			// 分拣接单
+			sorterReceiving(){
+				let userInfo=this.memberInfo.user_info
+				let data={
+					id:this.detail.id,
+					orderNum:this.detail.orderNum,
+					sorterId:userInfo.uid,
+					sorterName:userInfo.name,
+					sorterPhone:userInfo.mobile
+				}
+				
+				this.$http({
+					url:'/legwork/team/member/sorter/receiving/'+this.memberInfo.user_info.tid,
+					// url:'/legwork/team/member/sorter/receiving',
+					method:'POST',
+					
+					data:{
+						// sorterReceivingPOJO:this.sorterReceivingData
+						sorterReceivingPOJO:JSON.stringify([data]) 
+						// tid:this.memberInfo.user_info.tid
+					}
+					// data: data
+				}).then(res=>{
+					uni.showToast({
+						title:'接单成功',
+						duration:1000,
+			            success:()=> {
+			            	setTimeout(()=>{
+								this.$store.commit('setTab',2)
+			            		uni.switchTab({
+			            			url:'./index'
+			            		})
+			            	},1000)
+			            }
+					})
+					
+					
+				
+				})
+			},
+			//分拣完成
+			sortConfirm(){
+				let userInfo=this.memberInfo.user_info
+				let data={
+				  id: this.detail.id,
+				  labelId: this.labelList[this.tagIndex].id,
+				  orderNum: this.detail.orderNum,
+				  sorterId: this.detail.sorterId
+				}
+				this.$http({
+					url:'/legwork/team/member/sorter/sorter/'+userInfo.tid,
+					method:'POST',
+					data:{
+						// sorterReceivingPOJO:this.sorterReceivingData
+						sorterPOJO:JSON.stringify([data]) 
+						// tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.modalName=null
+					uni.showToast({
+						title:'分拣成功',
+						duration:1000
+					})
+					setTimeout(()=>{
+						this.$store.commit('setTab',3)
+						uni.switchTab({
+							url:'./index'
+						})
+					},1000)
+				})
+			},
+			//退单
+			chargeback(){
+				if(this.inputValue==''){
+					uni.showToast({
+						title:'请输入金额',
+						icon:'none'
+					})
+					return
+				}
+				this.$http({
+					apiName:'chargeback',
+					method:'POST',
+					data:{
+						cause:this.reasons[this.reasonIndex],
+						newMoney:this.inputValue,
+						orderNum:this.detail.orderNum,
+						tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.modalName=null
+					uni.showToast({
+						title:'退单成功',
+						duration:1000
+					})
+					setTimeout(()=>{
+						this.$store.commit('setTab',0)
+						uni.switchTab({
+							url:'./index'
+						})
+					},1000)
+				})
 			}
 		}
 	}
@@ -284,7 +389,7 @@
 	}
 	.contentBox{
 		padding: 0 32rpx;
-		height: calc(100vh - 128rpx);
+		// height: calc(100vh - 128rpx);
 		overflow: scroll;
 		padding-bottom: 40rpx;
 		box-sizing: border-box;
@@ -459,6 +564,8 @@ color: #181819;
      .bottom1{
 		 padding: 24rpx 32rpx;
 		 width: 100%;
+		 position: fixed;
+		 bottom: 0;
 		 background: #fff;
 		 .jiedanBtn{
 			 display: flex;

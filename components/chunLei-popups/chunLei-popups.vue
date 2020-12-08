@@ -5,7 +5,7 @@
 			<text :class="dynPlace" :style="{width:'0px',height:'0px'}" v-if="triangle"></text>
 			<view v-for="(item,index) in popData" :key="index" @tap.stop="tapItem(item)" 
 				class="itemChild view" :class="[direction=='row'?'solid-right':'solid-bottom',item.disabled?'disabledColor':'']">
-				<image class="image" :src="item.icon" v-if="item.icon"></image>{{item}}
+				<image class="image" :src="item.icon" v-if="item.icon"></image>{{item.text}}
 			</view>
 			<slot></slot>
 		</view>
