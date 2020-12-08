@@ -11,10 +11,12 @@ export default{
 	getAreaList:'/wechat/team/auth/area/list', //获取学校楼栋楼层信息
 	getSorterList:'/legwork/team/member/sorter/list' , //分拣订单列表
 	getDeliveryList:'/legwork/team/member/delivery/list' , //配送订单列表
-	getRole:'/legwork/team/member/Role', //当前角色
+	getRole:'/legwork/team/member/role', //当前角色
 	getSorterData:'/legwork/team/member/sorter/data',  //分拣接单数据
 	getDeliveryData:'/legwork/team/member/delivery/data'  ,//配送接单数据
 	orderDetail:'/legwork/team/member/sorter/detail', //订单详情
 	sorterReceiving:'/legwork/team/member/sorter/receiving', //分拣接单
+	getLabelList:'/legwork/config/label/list', //获取标签列表
+	chargeback:'/legwork/team/member/sorter/chargeback', //退单
 
 }

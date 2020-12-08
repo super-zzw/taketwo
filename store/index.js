@@ -8,9 +8,17 @@ const store = new Vuex.Store({
 	   isLogin:false,  //是否登录
 	   // userInfo:{}    ,//用户信息
 	   config:null,
-	   memberInfo:{}   //用户信息
+	   labelList:null,
+	   tab:1,
+	   memberInfo:{
+		  
+	   }   //用户信息
 	},
 	mutations:{
+		setTab(state,val){
+			state.tab=val
+		},
+		
 		setConfig(state,val){
 			state.config=val
 			// console.log(state)
@@ -24,6 +32,9 @@ const store = new Vuex.Store({
 		setMemberInfo(state,val){
 			state.memberInfo=val
 			// console.log(state)
+		},
+		setLabelList(state,val){
+			state.labelList=val
 		}
 	},
 })

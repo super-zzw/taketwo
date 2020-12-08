@@ -13,13 +13,16 @@
 			<view class="orderBox">
 				<view class="orderItem" v-for="(item,i) in orderList" :key="i" >
 					<view class="order-head">
-						<view class="left">
+						<view class="left" v-if="item.status==1||item.status==2">
 							<text class="s1" @click="select(1,i)" v-if="!item.selected"></text>
 							<image src="/static/image/select.png" mode="" class="selected" @click="select(-1,i,item.id)" v-if="item.selected"></image>
 						</view>
-						<view class="right">
-							<image src="/static/image/time.png" mode="" class="timeIcon" ></image>
-							<text class="time">{{item.createTime|dateFormat}}</text>
+						<view  :class="!(item.status==1||item.status==2)?'right between':'right'">
+							<view style="display: flex;align-items: center;">
+								<image src="/static/image/time.png" mode="" class="timeIcon" ></image>
+								<text class="time">{{item.createTime|dateFormat}}</text>
+							</view>
+							
 							<block v-if="currentRole==1">
 								<text class="status" v-if="item.status==1">待接单</text>
 								<text class="status" v-if="item.status==2">待分拣</text>
@@ -37,7 +40,7 @@
 						</view>
 					</view>
 					<view class="order-cont" @tap="toDetail(item.orderNum)">
-						<view class="code" v-if="item.status!=1">
+						<view class="code" v-if="item.status!=1&&item.status!=5">
 							<text class="desc">取件码：</text>
 							<view class="num">
 								{{item.fetchCode}}
@@ -53,9 +56,10 @@
 						</view>
 						<view class="orderInfo">
 							<text class="con">物流公司：{{item.logisticsName}}</text>
-							<text class="con">收货时间：{{item.receivingStartTime|dateFormat}}-{{item.receivingEndTime|dateFormat(8)}}</text>
+							<text class="con" v-if="item.status==1||item.status==2">收货时间：{{item.receivingStartTime|dateFormat}}-{{item.receivingEndTime|dateFormat(8)}}</text>
 							<view class="bott">
-								<text class="con">类型：{{item.type==1?'定时送':'加急送'}}/{{item.parcelType==1?'大包裹':'小包裹'}}</text>
+								<text class="con" v-if="item.status!=1&&item.status!=2">订单标签：{{item.labelName}}</text>
+								<text class="con" v-else>类型：{{item.type==1?'定时送':'加急送'}}/{{item.parcelType==1?'大包裹':'小包裹'}}</text>
 								<view class="price">
 									总价：<text class="num">¥{{item.paymentAmount}}</text>
 								</view>
@@ -242,6 +246,21 @@
 				</view>
 			</view>
 		</view>
+		<!-- 选择订单标签 -->
+		<view class="cu-modal bottom-modal" :class="modalName=='label'?'show':''">
+			<view class="cu-dialog dialog dialog4">
+				<text class="title">选择订单标签</text>
+				<view class="tagsList">
+					<view v-for="(item,i) in labelList" :key="i" :class="labelIndex==i?'tag active':'tag'" @click="labelIndex=i,labelId=item.id">
+					{{item.label}}	
+					</view>
+				</view>
+				<view class="btns btns1">
+					<view class="btn btn2" @tap="modalName=null,labelIndex=0">取消</view>
+					<view class="btn btn1" @click="sortConfirm">确定</view>
+				</view>
+			</view>
+		</view>
 		<DatePicker :modalName="modalName" @confirm="selTime" @cancel="hideModal('search')" :type="dateType"/>
 	</view>
 	
@@ -261,7 +280,7 @@
 			chunLeiPopups,DatePicker
 		},
 		computed: {
-			...mapState(['currentRole','config','memberInfo'])
+			...mapState(['currentRole','config','memberInfo','labelList','tab'])
 		},
 		filters:{
 			dateFormat(val,type){
@@ -273,13 +292,20 @@
 				tabs: [],
 				index: 1,
 				bool: false,
-				data: ['按订单编号升序', '按订单编号降序', '按取件码升序', '按取件码降序'],
+				data: [
+					{text:'按订单编号升序',sortField:1,sortType:'asc'},
+					{text:'按订单编号降序',sortField:1,sortType:'desc'},
+					{text:'按取件码升序',sortField:2,sortType:'asc'},
+					{text:'按取件码降序',sortField:2,sortType:'desc'}
+				],
 				orderList: [],
 				allSel: false,
 				modalName: null,
 				loaded:false,
 				tagsList: ['科大宿舍楼10栋', '科大宿舍楼9栋', '科大宿舍楼8栋', '科大宿舍楼7栋'],
 				tagIndex: 0,
+				labelIndex:0,
+				labelId:null,
 				addressList:{},
 				selectAddr:[0,0],
 				addressTxt:'请选择收货地址',
@@ -288,15 +314,19 @@
 				ordersBeginTimeTxt:'下单开始时间',
 				ordersEndTimeTxt:'下单结束时间',
 				dateType:'',
-				selectDataList:[]
-				// sorterData:[]
+				selectDataList:[],
+				sortField:'',
+				sortType:''
+				
 			};
 		},
-		async onLoad() {
+		async onLoad(opt) {
 	        await this.$onLaunched;
 			
-			this.initData()
+				
+			 this.initData()
 			
+		
 			
 		},
 		watch: {
@@ -313,22 +343,33 @@
 				this.tabs=newVal ==1  ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认'],
 				this.getOrderList()
 				this.index=1
+			},
+			tab(newVal){
+				this.index=newVal
+				this.getOrderList()
 			}
 		},
 		methods: {
 			async initData(){
-				uni.showLoading({
-					title: '加载中'
-				})
+				// uni.showLoading({
+				// 	title: '加载中'
+				// })
 				
 				await this.$config()
 				await this.getRole()
-				await this.getOrderList()
-				await this.getAreaList()
-				
 				// await this.getOrderList()
+				await this.getAreaList()
+	            await this.getLabelList()			
+				 this.getOrderList()
 				
-				uni.hideLoading()
+				// uni.hideLoading()
+			},
+			getLabelList(){
+				this.$http({
+					apiName:'getLabelList',
+				}).then(res=>{
+					 this.$store.commit('setLabelList',res.data)
+				}).catch(err=>{})
 			},
 			getRole(){
 				this.$http({
@@ -383,14 +424,32 @@
 					// data: data
 				}).then(res=>{
 					uni.showToast({
-						title:'接单成功'
+						title:'接单成功',
+						duration:1000
+	                     
 					})
-					this.getOrderList()
+					setTimeout(()=>{
+						this.selectDataList=[]
+						this.getOrderList()
+					},1000)
+				
 				})
 			},
 			// 订单分拣
 			toSort(){
-				let data=JSON.stringify(this.selectDataList) 
+				if(this.selectDataList.length==0){
+					uni.showToast({
+						title:'请至少选择一项',
+						icon:'none'
+					})
+					return
+				}
+				this.modalName='label'
+				
+			},
+			//确定分拣
+			sortConfirm(){
+				let data=JSON.stringify(this.selectDataList)
 				this.$http({
 					url:'/legwork/team/member/sorter/sorter/'+this.memberInfo.user_info.tid,
 					method:'POST',
@@ -401,10 +460,15 @@
 					}
 					// data: data
 				}).then(res=>{
+					this.modalName=null
 					uni.showToast({
-						title:'分拣成功'
+						title:'分拣成功',
+						duration:1000
 					})
-					this.getOrderList()
+					setTimeout(()=>{
+						this.selectDataList=[]
+						this.getOrderList()
+					},1000)
 				})
 			},
 			selTime(val){
@@ -464,7 +528,9 @@
 				this.bool = true
 			},
 			tapPopup(item) {
-				console.log(item)
+				
+				this.sortField=item.sortField
+				this.sortType=item.sortType
 			},
 			select(val, index,id) {
 
@@ -489,7 +555,7 @@
 					}else if(this.currentRole==1&&this.index==2){
 						data={
 							 id: this.orderList[index].id,
-							 labelId: 1,
+							 labelId: this.labelId,
 							 orderNum: this.orderList[index].orderNum,
 							 sorterId: this.orderList[index].sorterId
 						}
@@ -503,13 +569,16 @@
 				console.log(val)
 			},
 			getOrderList() {
+				uni.showLoading({
+					title: '加载中'
+				})
 				this.loaded=false
 				let apiName=this.currentRole==1?'getSorterList':'getDeliveryList'
+				
 				let data={
 						...this.searchData,
 		               
 						status:this.index,
-						
 					} 
 					console.log(1,JSON.stringify(data))
 				this.$http({
@@ -522,6 +591,7 @@
 				}).then(res=>{
 					this.loaded=true
 					this.orderList = res.data.records
+					uni.hideLoading()
 				})
 				
 			},
@@ -674,21 +744,28 @@ position: fixed;
 				.right {
 					display: flex;
 					align-items: center;
-
-					.timeIcon {
-						width: 28rpx;
-						height: 28rpx;
-						margin-right: 10rpx;
+                    &.between{
+					
+							justify-content: space-between;
+							width: 100%;
+						
 					}
-
-					.time {
-
-						font-size: 28rpx;
-						font-weight: 400;
-						color: #606266;
-						line-height: 40rpx;
-						margin-right: 32rpx;
-					}
+					   .timeIcon {
+					   	width: 28rpx;
+					   	height: 28rpx;
+					   	margin-right: 10rpx;
+					   }
+					   
+					   .time {
+					   
+					   	font-size: 28rpx;
+					   	font-weight: 400;
+					   	color: #606266;
+					   	line-height: 40rpx;
+					   	margin-right: 32rpx;
+					   }
+				   
+					
 
 					.status {
 
@@ -698,7 +775,7 @@ position: fixed;
 						line-height: 40rpx;
 					}
 				}
-
+	
 			}
 
 			.order-cont {
@@ -1163,8 +1240,77 @@ position: fixed;
 			}
 		}
 	}
+	.dialog4{
+		.title{
+			font-size: 40rpx;
+			
+			font-weight: 500;
+			color: #181819;
+			line-height: 56rpx;
+		}
+		.tagsList{
+					padding: 0 18rpx;
+					margin-top: 88rpx;
+					display: flex;
+					flex-wrap: wrap;
+					justify-content: space-between;
+					.tag{
+						
+		border-radius: 10rpx;
+		background: #F1F2F4;
+		border-radius: 10rpx;
+		width: 274rpx;
+		height: 64rpx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-size: 32rpx;
+		
+		font-weight: 400;
+		color: #909399;
+		line-height: 44rpx;
+		margin-right: 32rpx;
+		margin-bottom: 24rpx;
+		&.active{
+			
+		background: #FFAE18;
+		color: #181819;
+		}
+					}
+					.tag:nth-child(even){
+						margin-right: 0;
+					}
+				}
+				.btns{
+								
+								margin-top: 58rpx;
+								display: flex;
+								justify-content: space-between;
+								.btn{
+									width: 292rpx;
+									height: 80rpx;
+									
+									font-size: 32rpx;
+									font-family: PingFangSC-Medium, PingFang SC;
+									font-weight: 500;
+									color: #181819;
+									display: flex;
+									justify-content: center;
+									align-items: center;
+									border-radius: 40rpx;
+									&.btn1{
+										background: #FFAE18;
+									}
+									&.btn2{
+										
+				border: 2rpx solid #909399;
+									}
+								}
+							}
+	}
 	.box.active{
 		
 background: #FFAE18;
 	}
+
 </style>
