@@ -8,7 +8,7 @@ if (test) {
 	_baseUrl = 'http://mgm-api.dev.gzcyou.com/api';  //内网穿透地址
 } else {
 	// _baseUrl = 'https://api.migmkids.com/api';  //正式地址
-	_baseUrl = 'http://192.168.1.17:7600';  //本地地址
+	_baseUrl = 'http://192.168.1.25:7600';  //本地地址
 }
 var baseUrl = _baseUrl;
 // 请求loading交给页面处理

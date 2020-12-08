@@ -2,8 +2,8 @@
     "name" : "kehuduan",
     "appid" : "__UNI__B29E82E",
     "description" : "",
-    "versionName" : "ColorUi for UniApp 2.1.4",
-    "versionCode" : 214,
+    "versionName" : "1",
+    "versionCode" : 1,
     "transformPx" : false,
     "app-plus" : {
         /* 5+App特有相关 */
@@ -48,10 +48,15 @@
     /* 快应用特有相关 */
     "mp-weixin" : {
         /* 小程序特有相关 */
-        "appid" : "wx519cedf891f4c845",
+        "appid" : "wx3fd94d4a678c2ec6",
         "setting" : {
             "urlCheck" : false,
             "es6" : true
+        },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "创建地址定位需要"
+            }
         }
     },
     "h5" : {
