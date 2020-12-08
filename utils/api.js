@@ -14,9 +14,11 @@ export default{
 	getRole:'/legwork/team/member/role', //当前角色
 	getSorterData:'/legwork/team/member/sorter/data',  //分拣接单数据
 	getDeliveryData:'/legwork/team/member/delivery/data'  ,//配送接单数据
-	orderDetail:'/legwork/team/member/sorter/detail', //订单详情
+	sorterDetail:'/legwork/team/member/sorter/detail', //分拣订单详情
+	deliveryDetail:'/legwork/team/member/delivery/detail', //配送订单详情
 	sorterReceiving:'/legwork/team/member/sorter/receiving', //分拣接单
 	getLabelList:'/legwork/config/label/list', //获取标签列表
 	chargeback:'/legwork/team/member/sorter/chargeback', //退单
+	delaySorter: '/legwork/team/member/delivery/sorter', //延迟配送
 
 }

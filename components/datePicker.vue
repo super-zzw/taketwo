@@ -42,7 +42,7 @@
 		data() {
 			return {
 				dayList:[],
-				timeList:['9:00','10:00','11:00','12:00','13:00','14:00','15:00'],
+				timeList:['9:00-10:00','10:00-11:00','11:00-12:00','12:00-13:00','13:00-14:00','14:00-15:00'],
 				dateI:0,
 				timeI:0,
 				text:''
@@ -60,15 +60,18 @@
 					this.timeList=this.config.receivingTime.map(item=>{
 						return item.startTime+'-'+item.endTime
 					})
-				}else{
+				}else if(this.type=="ordersBeginTime"||this.type=="ordersEndTime"){
 					this.timeList=['9:00','10:00','11:00','12:00','13:00','14:00','15:00']
+				}
+				else{
+					this.timeList=['9:00-10:00','10:00-11:00','11:00-12:00','12:00-13:00','13:00-14:00','14:00-15:00']
 				}
 				
 			}
 		},
 		methods:{
 			hideModal(e) {
-				this.$emit('cancel')
+				this.$emit('hideModal')
 			},
 			confirm(){
 			  

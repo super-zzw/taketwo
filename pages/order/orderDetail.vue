@@ -12,7 +12,7 @@
 				</block>
 				<block v-if="currentRole==2">
 					<text class="txt" v-if="detail.status==1">待接单</text>
-					<text class="txt" v-if="detail.status==2">配送中</text>
+					<text class="txt" v-if="detail.status==2">待配送</text>
 					<text class="txt" v-if="detail.status==3">已完成</text>
 					<text class="txt" v-if="detail.status==4">已确认</text>
 				</block>
@@ -54,6 +54,7 @@
 				<text class="txt" v-if="detail.type">订单类型：{{detail.type==1?'定时送':'加急送'}}</text>
 				<text class="txt" v-if="detail.parcelType">包裹类型：{{detail.parcelType==1?'大包裹':'小包裹'}}</text>
 				<text class="txt">收货时间：{{detail.receivingStartTime|dateFormat}}-{{detail.receivingEndTime|dateFormat(8)}}</text>
+				<text class="txt" v-if="detail.delayStartTime">延迟收货时间：{{detail.delayStartTime|dateFormat}}-{{detail.delayEndTime|dateFormat(8)}}</text>
 				<text class="txt" >下单时间：{{detail.createTime|dateFormat}}</text>
 				<text class="txt" v-if="detail.remark">订单备注：{{detail.remark}}</text>
 				<view class="txt">总价：<text class="price">¥{{detail.paymentAmount}}</text></view>
@@ -65,7 +66,7 @@
 				<!-- <block v-if="status!='待分拣'"> -->
 					<text class="txt" v-if="!(detail.status==2&&currentRole==1)">分拣时间：{{detail.sorterTime|dateFormat}}</text>
 				
-						<text class="txt" v-if="detail.status==4">配送接单时间：2020/11/24 16:30</text>
+						<text class="txt" v-if="detail.status==4||(currentRole==2&&detail.status!=1)">配送接单时间：2020/11/24 16:30</text>
 						<!-- <text class="txt" v-if="status!='待配送'">完成配送时间：2020/11/24 16:30</text> -->
 					
 					
@@ -90,15 +91,15 @@
 					<image src="/static/image/contact.png" mode=""></image>
 					<text>联系下单人</text>
 				</view>
-				<block v-if="detail.status==2">
+				<block v-if="currentRole==1">
 					<view class="btn btn1" data-target="tuidan" @tap="showModal">退单</view>
 					<view class="btn btn2" data-target="fenjian" @tap="showModal">分拣</view>
 					
 				</block>
-				<!-- <block v-if="detail.status==2">
+				<block v-if="currentRole==2">
 					<view class="btn btn1" data-target="yanchi" @tap="showModal">延迟配送</view>
-					<view class="btn btn2" data-target="fenjian" @tap="showModal">配送完成</view>
-				</block> -->
+					<view class="btn btn2"  @tap="deliveryFinish">配送完成</view>
+				</block>
 			</view>
 		</view>
 		<!-- 退单 -->
@@ -174,7 +175,7 @@
 					<view class="tt">
 						<text class="label">延迟配送时间</text>
 						<view class="timeBox" @click="modalName='date'">
-							<text>2020/10/24 早上</text>
+							<text>{{timeTxt}}</text>
 							<image src="/static/image/down.png" mode=""></image>
 						</view>
 					</view>
@@ -199,11 +200,11 @@
 					</view>
 					<view class="btns">
 						<view class="btn btn2" @tap="hideModal">取消</view>
-						<view class="btn btn1" @tap="hideModal">确定</view>
+						<view class="btn btn1" @tap="delaySorter">确定</view>
 					</view>
 				</view>
 			</view>
-			<DatePicker :modalName="modalName" @hideModal="hideModal('yanchi')"/>
+			<DatePicker :modalName="modalName" @hideModal="hideModal('yanchi')" @confirm="confirmTime"/>
 		<!-- </view> -->
 		
 	</view>
@@ -230,7 +231,10 @@
 			   fenjianFlag:1,
 			   tagIndex:0,
 			   delayReasons:['原配送时间不方便收货','客户要求的延迟时间'],
-			   delayReasonsIndex:0
+			   delayReasonsIndex:0,
+			   delayEndTime:'',
+			   delayStartTime:'',
+			   timeTxt:'请选择延迟配送时间'
 			};
 		},
 		computed: {
@@ -257,8 +261,9 @@
 				this.modalName = name
 			},
 			getOrderDetail(){
+				let apiName=this.currentRole==1?'sorterDetail':'deliveryDetail'
 				this.$http({
-					apiName:'orderDetail',
+					apiName:apiName,
 					method:'POST',
 					data:{
 						orderNum:this.orderNum,
@@ -267,6 +272,16 @@
 				}).then(res=>{
 					this.detail=res.data
 				})
+			},
+			confirmTime(val){
+				this.hideModal('yanchi')
+				console.log(val)
+				let a=val.year+'-'+val.month+'-'+parseInt(val.date)+' '
+				let start=a+val.time.split('-')[0]
+				let end=a+val.time.split('-')[1]
+				this.delayStartTime=new Date(start).getTime()
+				this.delayEndTime=new Date(end).getTime()
+				this.timeTxt=a+val.time
 			},
 			copy() {
 				uni.setClipboardData({
@@ -378,7 +393,55 @@
 						})
 					},1000)
 				})
-			}
+			},
+			//延迟配送
+			delaySorter(){
+				this.$http({
+					apiName:'delaySorter',
+					method:'POST',
+					data:{
+						delayEndTime:this.delayEndTime,
+						delayStartTime:this.delayStartTime,
+						orderNum:this.detail.orderNum,
+						remark:this.delayReasons[this.delayReasonsIndex],
+						tid:this.memberInfo.user_info.tid
+					}
+				}).then(res=>{
+					this.modalName=null
+					uni.showToast({
+						title:'延迟配送成功',
+						duration:1000
+					})
+					setTimeout(()=>{
+						this.$store.commit('setTab',0)
+						uni.switchTab({
+							url:'./index'
+						})
+					},1000)
+				})
+			},
+			//配送完成
+			deliveryFinish() {
+				
+				this.$http({
+					url: '/legwork/team/member/delivery/finish/' + this.memberInfo.user_info.tid,
+					method: 'POST',
+					data: {
+						ids:JSON.stringify([this.detail.deliveryId]) 
+					}
+				}).then(res => {
+					uni.showToast({
+						title: '配送成功',
+						duration: 1000
+					})
+					setTimeout(() => {
+						this.$store.commit('setTab',3)
+						uni.switchTab({
+							url:'./index'
+						})
+					}, 1000)
+				})
+			},
 		}
 	}
 </script>
