@@ -19,4 +19,7 @@ export default{
 	getLabelList:'/legwork/config/label/list', //获取标签列表
 	chargeback:'/legwork/team/member/sorter/chargeback', //退单
 
+
+	bindTeam:"/wechat/team/auth/change",  //切换团队
+	bindSchool:"/wechat/team/auth/change/school",  //切换学校
 }
