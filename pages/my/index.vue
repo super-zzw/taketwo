@@ -16,7 +16,7 @@
 					   <image class="team12" src="../../static/image/you1.png" mode="widthFix"></image>
 				 </picker>
 				<view class="team" data-target="bottomModal" @tap="showModal">
-					A团队-广州科技职业技术大学
+					{{memberInfo.user_info.team_name}}-{{memberInfo.school_name}}
 					<image class="team12" src="../../static/image/you1.png" mode="widthFix"></image>
 				</view>
 			</view>
@@ -87,7 +87,7 @@
 							所在团队
 						</view>
 						<view class="mdCol1">
-							<view :class="team_active==i?'mdItem active':'mdItem'" v-for="(item,i) in memberInfo.team_list" @tap="team_active=i">
+							<view :class="team_active==i?'mdItem active':'mdItem'" v-for="(item,i) in memberInfo.team_list" :key="i" @tap="changeTeam(i)">
 								{{item.name}}
 							</view>
 						
@@ -98,14 +98,8 @@
 							所在学校
 						</view>
 						<view class="mdCol1">
-							<view class="mdItem">
-								A学校
-							</view>
-							<view class="mdItem active">
-								B学校
-							</view>
-							<view class="mdItem">
-								C学校
+							<view class="mdItem" :class="active_school == index ? 'active' : ''" v-for="(item,index) in schoolList" @tap="changeSchool(index)" :key="index">
+								{{item.school_name}}
 							</view>
 						</view>
 					</view>
@@ -115,7 +109,7 @@
 						<view class="dBtn dBtn0" @tap="hideModal">
 							取消
 						</view>
-						<view class="dBtn dBtn1" @tap="hideModal">
+						<view class="dBtn dBtn1" @tap="bindTeamSchool">
 							确定
 						</view>
 					</view>
@@ -133,17 +127,19 @@
 			return {
 				tabs:["全部","今日","近7天","近30日"],
 				roleArr:['分拣员','配送员'],
-				team_active:0,
+				team_active:-1,  //选中的team
 				activeTab0:1,
 				activeTab1:1,
 				modalName:null,
 				sorterData:null,
-				deliveryData:null
-				
+				deliveryData:null,
+				schoolList:[],  //学校列表
+				active_school:-1,  //选中的学校
 			};
 		},
 		created() {
-			this.initData()
+			this.initData();
+			this.getTeamIndex()
 		},
 		computed:{
 			...mapState(['roles','currentRole','memberInfo'])
@@ -157,6 +153,83 @@
 			}
 		},
 		methods:{
+			//切换团队
+			changeTeam(i){
+				if(this.team_active === i){
+					return
+				}else{
+					this.team_active =i;
+					this.getSchoolList();
+					this.active_school = -1;
+				}
+			},
+			//切换学校
+			changeSchool(i){
+				if(this.active_school === i){
+					return
+				}else{
+					this.active_school = i;
+					
+				}
+			},
+			async bindTeamSchool(){
+				uni.showLoading({mask:true})
+				await this.bindTeam();
+				await this.bindSchool();
+				await this.updateInfo();
+				await this.getRole();
+				this.hideModal();
+				uni.hideLoading()
+			},
+			//更新用户信息
+			updateInfo(){
+				this.$getMemberInfo().then(res => {
+					this.$store.commit('setMemberInfo', res)
+				})
+			},
+			//更新用户角色
+			getRole(){
+				this.$http({
+					apiName:'getRole',
+					method:'POST',
+					data:{
+						tid:this.memberInfo.team_list[this.team_active].tid,
+						
+					}
+				}).then(res=>{
+					 this.$store.commit('setRoles',res.data) 
+					 this.$store.commit('setRole',res.data[0].roleType) 
+				}).catch(err=>{})
+			},
+			//绑定团队
+			bindTeam(){
+				this.$http({
+					apiName:"bindTeam",
+					data:{tid:this.memberInfo.team_list[this.team_active].tid}
+				}).then(res => {
+					
+				}).catch(err => {})
+			},
+			//绑定学校
+			bindSchool(){
+				this.$http({
+					apiName:"bindSchool",
+					data:{
+						tid:this.memberInfo.team_list[this.team_active].tid,
+						sc_id:this.schoolList[this.active_school].school_id
+						}
+				}).then(res => {
+					
+				}).catch(err => {})
+			},
+			//计算激活的团队
+			getTeamIndex(){
+				let _team_active_index = this.memberInfo.team_list.findIndex(item => {
+					return item.tid == this.memberInfo.user_info.tid;
+				})
+				this.team_active = _team_active_index;
+				this.getSchoolList();
+			},
 			async initData(){
 				uni.showLoading({
 					title:'加载中...'
@@ -169,8 +242,28 @@
 				}
 				uni.hideLoading()
 			},
+			//根据团队获取学校列表
+			async getSchoolList(){
+				uni.showLoading({mask:true})
+				await this.$http({
+					apiName:'getSchoolList',
+					data:{
+						tid:this.memberInfo.team_list[this.team_active].tid
+					}
+				}).then(res=>{
+					// this.sorterData=res.data
+					this.schoolList = res.list;
+					
+					let _active_school_index = this.schoolList.findIndex(item => {
+						return item.school_id == this.memberInfo.school_id;
+					})
+					
+					this.active_school = _active_school_index;
+				}).catch(err=>{})
+				uni.hideLoading()
+			},
 			showModal(e) {
-				this.modalName = e.currentTarget.dataset.target
+				this.modalName = e.currentTarget.dataset.target;
 			},
 			hideModal(e) {
 				this.modalName = null
@@ -399,7 +492,7 @@
 					.mdItem{
 						line-height: 96rpx;
 						color: #909399;
-						font-size: 36rpx;
+						font-size: 24rpx;
 					}
 					.mdItem.active{
 						color: #FFAE18;
