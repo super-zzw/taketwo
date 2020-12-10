@@ -1,14 +1,16 @@
 import Api from './api.js'
+import store from '../store/index.js'
 import utils from "./method.js"
 import qs from 'querystring'
 var test = true;
 var _baseUrl = '';
 if (test) {
-	 baseUrl = 'http://legwork-wechatgateway.dev.gzcyou.com'; 
+	 _baseUrl = 'http://legwork-wechatgateway.dev.gzcyou.com'; 
 	// _baseUrl = 'http://mgm-api.dev.gzcyou.com/api';  //内网穿透地址
 } else {
 	// _baseUrl = 'https://api.migmkids.com/api';  //正式地址
-	_baseUrl = 'http://192.168.1.17:7600';  //本地地址
+	// _baseUrl = 'http://192.168.1.25:7600';  //本地地址
+	_baseUrl = 'http://lin-mng.dev.gzcyou.com';  //本地地址
 }
 var baseUrl = _baseUrl;
 // 请求loading交给页面处理
@@ -100,6 +102,7 @@ function refreshTokenRequst(){
      uni.setStorageSync('reToken',res.reToken); // 存刷新token
         // 并且将所有存储到观察者数组中的请求重新执行。
         onAccessTokenFetched();
+		store.commit('setReload',true)
         // 纸条撕掉
         isRefreshing = true;
     });
@@ -110,6 +113,7 @@ function onAccessTokenFetched() {
     subscribers.forEach((callback)=>{
         callback();
     })
+	
     subscribers = [];
 }
 

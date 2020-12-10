@@ -84,7 +84,7 @@
 				}).catch(err => {
 					// this.hideModal()
 					console.log(212,err)
-					if(err.ret==11003){
+					if(err.data.ret==11003){
 						this.showModal()
 					}
 					

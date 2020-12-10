@@ -1,5 +1,5 @@
 <template>
-	<view class="container">
+	<view class="container" >
 		<view class="bannerBox">
 			<view class="tabsBox">
 				<text :class="index==i+1?'tab active':'tab'" v-for="(tab,i) in tabs" :key="i" @click="index=i+1">{{tab}}</text>
@@ -10,7 +10,7 @@
 			</view>
 		</view>
 		<block v-if="orderList.length>0&&loaded">
-			<view class="orderBox">
+			<view class="orderBox" :style="{marginBottom:index==1||index==2?'96rpx':'0'}">
 				<view class="orderItem" v-for="(item,i) in orderList" :key="i">
 					<view class="order-head">
 						<view class="left" v-if="item.status==1||item.status==2">
@@ -27,7 +27,7 @@
 								<text class="status" v-if="item.status==1">待接单</text>
 								<text class="status" v-if="item.status==2">待分拣</text>
 								<text class="status" v-if="item.status==3">已分拣</text>
-								<text class="status" v-if="item.status==4">代配送</text>
+								<text class="status" v-if="item.status==4">待配送</text>
 								<text class="status" v-if="item.status==5">已退单</text>
 							</block>
 							<block v-if="currentRole==2">
@@ -40,34 +40,48 @@
 						</view>
 					</view>
 					<view class="order-cont" @tap="toDetail(item.orderNum)">
-						<view class="code" v-if="item.status!=1&&item.status!=5">
-							<text class="desc">取件码：</text>
+						<view class="code" v-if="(!(item.status==1||item.status==5)&&currentRole==1)||(item.status==2&&currentRole==2)">
+							<text class="desc">{{item.logisticsType==1?'订单号':'取件码'}}：</text>
 							<view class="num">
 								{{item.fetchCode}}
-								<image src="/static/image/copy.png" mode="" @click="copy"></image>
+								<image src="/static/image/copy.png" mode="" @click="copy(item.fetchCode)"></image>
 							</view>
 						</view>
 						<view class="stuInfo">
 							<image src="/static/image/send.png" mode="" class="sendIcon"></image>
 							<view class="main">
 								<text class="t1">{{item.receiverAddress}}</text>
-								<text class="t2">{{item.receiverName}}&ensp;{{item.receiverPhone}}</text>
+								<text class="t2">{{item.receiverName}}&ensp;{{item.receiverPhone|phoneFormat}}</text>
 							</view>
 						</view>
 						<view class="orderInfo">
 							<text class="con">物流公司：{{item.logisticsName}}</text>
 							<text class="con" v-if="(item.status==1||item.status==2)&&currentRole==1">收货时间：{{item.receivingStartTime|dateFormat}}-{{item.receivingEndTime|dateFormat(8)}}</text>
-							<view class="bott">
-								<text class="con" v-if="item.status!=1&&item.status!=2">订单标签：{{item.labelName}}</text>
-								<text class="con" v-else>类型：{{item.type==1?'定时送':'加急送'}}/{{item.parcelType==1?'大包裹':'小包裹'}}</text>
-								<view class="price">
+							<view class="bott" v-if="currentRole==1||(currentRole==2&&item.status<3)">
+								<block v-if="item.status!=5">
+									<text class="con" v-if="(item.status==1||item.status==2)&&currentRole==1">类型：{{item.type==1?'定时送':'加急送'}}/{{item.parcelType==1?'大包裹':'小包裹'}}</text>
+									<text class="con" v-else>订单标签：{{item.labelName}}</text>
+								</block>
+								
+								<view class="price" v-if="item.status==5">
+									总价：<text class="num">¥{{item.chargebackOldAmount}}</text>
+								</view>
+								<view class="price" v-else>
 									总价：<text class="num">¥{{item.paymentAmount}}</text>
 								</view>
 							</view>
+							<block v-if="item.status>2&&currentRole==2">
+							  <text class="con" >订单标签：{{item.labelName}}</text>
+							  <text class="con" >完成配送时间：{{item.finishTime|dateFormat}}</text>
+							  <view class="price">
+							  	总价：<text class="num">¥{{item.paymentAmount}}</text>
+							  </view>
+							</block>
 						</view>
 					</view>
 				</view>
-
+                
+				<view style="text-align: center;" v-if="noMore">没有更多数据了</view>
 			</view>
 			<view class="bottom" v-if="index==1||index==2">
 				<view class="left" @click="allSelect">
@@ -94,7 +108,7 @@
 					<image src="/static/image/search.png" mode="" @tap="confirm"></image>
 				</view>
 				<view class="content">
-					<view class="tt">
+					<view class="tt" v-if="!((index==1||index==2)&&currentRole==1)">
 						<text class="label">订单标签</text>
 						<view class="cont">
 							<view class="box" @click="modalName='fenjian'">
@@ -172,7 +186,7 @@
 						<text class="label">包裹类型</text>
 						<view class="cont">
 							<view class="cont1">
-							<view  v-for="(item,i) in config.parcelType" :key="item.id" :class="parcelIndex==i?'box active':'box'" @tap="parcelIndex=i,searchData.parcelType=item.id">
+							<view  v-for="(item,i) in config.parcelType" :key="item.id" :class="parcelIndex==i?'box active':'box'" @tap="parcelIndex=i,searchData.parcelType=item.title">
 									{{item.title}}
 								</view>
 
@@ -198,7 +212,7 @@
 					</view>
 				</view>
 				<view class="btns btns1">
-					<view class="btn btn2" @tap="hideModal">重置</view>
+					<view class="btn btn2" @tap="tagIndex=-1,modalName='search',tagsTxt='请选择订单标签'">重置</view>
 					<view class="btn btn1" @click="fenjianFlag=1,modalName='search',tagsTxt=labelList[tagIndex].label">确定</view>
 				</view>
 			</view>
@@ -237,7 +251,7 @@
 				</view>
 				<view class="dBoo">
 					<view class="dBtns">
-						<view class="dBtn dBtn0" @tap="hideModal">
+						<view class="dBtn dBtn0" @tap="hideModal('search')">
 							取消
 						</view>
 						<view class="dBtn dBtn1" @tap="addressConfirm">
@@ -262,7 +276,7 @@
 				</view>
 			</view>
 		</view>
-		<DatePicker :modalName="modalName" @confirm="selTime" @cancel="hideModal('search')" :type="dateType" />
+		<DatePicker :modalName="modalName" @confirm="selTime" @hideModal="hideModal('search')" :type="dateType" />
 	</view>
 
 </template>
@@ -282,11 +296,28 @@
 			DatePicker
 		},
 		computed: {
-			...mapState(['currentRole', 'config', 'memberInfo', 'labelList', 'tab'])
+			...mapState(['currentRole', 'config', 'memberInfo', 'labelList', 'tab','reload'])
 		},
 		filters: {
 			dateFormat(val, type) {
 				return utils.unixToDatetime(val, type)
+			},
+			phoneFormat(val){
+				return utils.phoneFormat(val)
+			}
+		},
+		onPullDownRefresh(){
+			 // setTimeout( ()=> {
+				 this.page=1
+				 this.loaded=false
+			this.getOrderList()
+			            uni.stopPullDownRefresh();
+			        // }, 1000);
+		},
+		onReachBottom(){
+			if(!this.noMore){
+				this.page++
+				this.getOrderList(true)
 			}
 		},
 		data() {
@@ -319,8 +350,7 @@
 				allSel: false,
 				modalName: null,
 				loaded: false,
-				// tagsList: ['科大宿舍楼10栋', '科大宿舍楼9栋', '科大宿舍楼8栋', '科大宿舍楼7栋'],
-				tagIndex: 0,
+				tagIndex: -1,
 				labelIndex: 0,
 				labelId: null,
 				addressList: {},
@@ -337,18 +367,17 @@
 				sortType: '',
 				wuliuIndex:-1,
 				orderIndex:-1,
-				parcelIndex:-1
+				parcelIndex:-1,
+				noMore:false,
+				page:1
 
 			};
 		},
 		async onLoad(opt) {
 			await this.$onLaunched;
-
+ console.log(this.memberInfo)
 
 			this.initData()
-
-
-
 		},
 		onHide() {
 			this.selectDataList = []
@@ -358,6 +387,9 @@
 		watch: {
 			index(i) {
 				this.selectDataList = []
+				this.loaded=false
+				// this.orderList=[]
+				this.page=1
 				this.allSel = false
 				this.getOrderList()
 			},
@@ -368,12 +400,19 @@
 			},
 			currentRole(newVal, old) {
 				this.tabs = newVal == 1 ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认'],
+				// this.orderList=[]
 					this.getOrderList()
 				this.index = 1
 			},
 			tab(newVal) {
 				this.index = newVal
 				this.getOrderList()
+			},
+			reload(newVal){
+				if(newVal){
+					this.getOrderList()
+					// this.$store.commit('setReload',false)
+				}
 			}
 		},
 		methods: {
@@ -384,8 +423,8 @@
 				// await this.getOrderList()
 				await this.getAreaList()
 				await this.getLabelList()
-				this.getOrderList()
-
+				await this.getOrderList()
+                 // this.loaded=true
 			},
 			initSearchBox(){
 				this.addressTxt='请选择收货地址',
@@ -393,10 +432,12 @@
 				this.receivingTxt='请选择收货时间'
 				this.ordersBeginTimeTxt='下单开始时间'
 				this.ordersEndTimeTxt='下单结束时间'
+				this.tagIndex=-1
 				this.selectAddr= [0, 0],
 				this.wuliuIndex=-1,
 				this.orderIndex=-1,
 				this.parcelIndex=-1
+				this.searchData={}
 				
 			},
 			getLabelList() {
@@ -404,6 +445,7 @@
 					apiName: 'getLabelList',
 				}).then(res => {
 					this.$store.commit('setLabelList', res.data)
+					this.labelId=res.data[0].id
 				}).catch(err => {})
 			},
 			getRole() {
@@ -415,6 +457,7 @@
 
 					}
 				}).then(res => {
+					// console.log(res.data[0].uid)
 					this.$store.commit('setRoles', res.data)
 					this.$store.commit('setRole', res.data[0].roleType)
 					this.tabs = res.data[0].roleType == 1 ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认']
@@ -444,6 +487,13 @@
 			},
 			// 接单
 			receiving() {
+				if (this.selectDataList.length == 0) {
+					uni.showToast({
+						title: '请至少选择一项',
+						icon: 'none'
+					})
+					return
+				}
 				let url, data
 
 
@@ -473,6 +523,7 @@
 
 					})
 					setTimeout(() => {
+						this.index=2
 						this.selectDataList = []
 						this.getOrderList()
 					}, 1000)
@@ -510,6 +561,7 @@
 						duration: 1000
 					})
 					setTimeout(() => {
+						this.index=3
 						this.selectDataList = []
 						this.getOrderList()
 					}, 1000)
@@ -536,6 +588,7 @@
 						duration: 1000
 					})
 					setTimeout(() => {
+						this.index=3
 						this.selectDataList = []
 						this.getOrderList()
 					}, 1000)
@@ -592,10 +645,11 @@
 this.initSearchBox()
 			},
 			confirm() {
+				this.page=1
                 this.getOrderList()
 				this.modalName=null
-				this.searchData={}
-				this.initSearchBox()
+				// this.searchData={}
+				// this.initSearchBox()
 			},
 			showFilter() {
 				this.bool = true
@@ -620,6 +674,7 @@ this.initSearchBox()
 					let data
 					if (this.index == 1) {
 						let id = this.currentRole == 1 ? 'sorterId' : 'deliveryId'
+						// let idVal=this.currentRole == 1 ?this.orderList[index].sorterId:this.orderList[index].deliveryId
 						let name = this.currentRole == 1 ? 'sorterName' : 'deliveryName'
 						let phone = this.currentRole == 1 ? 'sorterPhone' : 'deliveryPhone'
 						data = {
@@ -646,18 +701,20 @@ this.initSearchBox()
 				}
 				console.log(val)
 			},
-			getOrderList() {
+			getOrderList(more=false) {
 				uni.showLoading({
 					title: '加载中'
 				})
-				this.loaded = false
+				// this.loaded = false
+				this.noMore=false
 				// let apiName=this.currentRole==1?'getSorterList':'getDeliveryList'
 				let url = this.currentRole == 1 ? '/legwork/team/member/sorter/list/' : '/legwork/team/member/delivery/list/'
 				let data = {
 					...this.searchData,
 					status: this.index,
 					sortType: this.sortType,
-					sortField: this.sortField
+					sortField: this.sortField,
+					pageNum:this.page
 				}
 				// console.log(1,JSON.stringify(data))
 				this.$http({
@@ -669,7 +726,15 @@ this.initSearchBox()
 					data: data
 				}).then(res => {
 					this.loaded = true
-					this.orderList = res.data.records
+					if(res.data.current==res.data.pages){
+						this.noMore=true
+					}
+					if(more==true){
+						this.orderList =this.orderList.concat(res.data.records) 
+					}else{
+						this.orderList=res.data.records
+					}
+					
 					this.sortField = ''
 					this.sortType = ''
 					uni.hideLoading()
@@ -688,6 +753,7 @@ this.initSearchBox()
 
 						if (this.index == 1) {
 							let id = this.currentRole == 1 ? 'sorterId' : 'deliveryId'
+							// let idVal=this.currentRole == 1 ?item.sorterId:item.deliveryId
 							let name = this.currentRole == 1 ? 'sorterName' : 'deliveryName'
 							let phone = this.currentRole == 1 ? 'sorterPhone' : 'deliveryPhone'
 							data = {
@@ -722,9 +788,9 @@ this.initSearchBox()
 					url: './orderDetail?num=' + num
 				})
 			},
-			copy() {
+			copy(val) {
 				uni.setClipboardData({
-					data: 'hello',
+					data: val,
 					success: function() {
 						console.log('success');
 					}
@@ -964,21 +1030,25 @@ this.initSearchBox()
 							margin-bottom: 0;
 						}
 
-						.price {
-
-							font-size: 32rpx;
-
-							font-weight: 400;
-							color: #606266;
-							line-height: 44rpx;
-
-							.num {
-								color: #FF0000;
-							}
+						
+					}
+					.price {
+					
+						font-size: 32rpx;
+					
+						font-weight: 400;
+						color: #606266;
+						line-height: 44rpx;
+					
+						.num {
+							color: #FF0000;
 						}
 					}
 				}
 			}
+		}
+		.orderItem:last-child{
+			margin-bottom: 0;
 		}
 	}
 

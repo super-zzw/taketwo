@@ -20,8 +20,5 @@ export default{
 	getLabelList:'/legwork/config/label/list', //获取标签列表
 	chargeback:'/legwork/team/member/sorter/chargeback', //退单
 	delaySorter: '/legwork/team/member/delivery/sorter', //延迟配送
-
-
-	bindTeam:"/wechat/team/auth/change",  //切换团队
-	bindSchool:"/wechat/team/auth/change/school",  //切换学校
+    deleteToken:'/wechat/team/auth/token/delete' //删除token
 }

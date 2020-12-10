@@ -5,8 +5,9 @@
 		    "path" : "pages/order/index",
 		    "style" :                                                                                    
 		    {
-		        
+		        "enablePullDownRefresh":true
 		    }
+			
 		    
 		},
 		{

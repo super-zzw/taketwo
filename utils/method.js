@@ -116,7 +116,16 @@ export default{
     		s:seconds
     	};
     },
-	
+	phoneFormat(phone){
+		let result=''
+		 phone.split('').forEach((item,i)=>{
+			if(i>=3&&i<7){
+				item='*'
+			}
+			result+=item
+		})
+		return result
+	},
 	//处理拒绝的跳转
 	dealRejectPage(){
 		console.log(store.state.jumpPage);
@@ -196,39 +205,11 @@ export default{
 					apiName:'getMemberInfo'
 				}).then(res=>{
 					resolve(res)
-					// console.log('zzw',res)
-					
-					
+
 				}).catch(err=>{
 					reject(err)
 				})
 		})
-		
-		
-		
 	},
-	refreshToken(){
-		http({
-			apiName:'refreshToken',
-			method:'POST',
-			data:{
-				token:uni.getStorageSync('reToken')
-			}
-		}).then(res=>{
-			// console.log(123,res)
-			uni.setStorageSync('token',res.token); // 存token
-			uni.setStorageSync('reToken',res.reToken); // 存刷新token
-			// store.commit('setConfig',res.data)
-		}).catch(err=>{
-			console.log(456,err)
-		})
-	},
-	//homeShare
-	homeShare(imageUrl){
-		return {
-			title:"不只教英文的中外国际双师课堂",
-			path:"/pages/index/index",
-			imageUrl:imageUrl
-		}
-	}
+	
 }

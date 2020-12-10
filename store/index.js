@@ -5,6 +5,7 @@ const store = new Vuex.Store({
 	state:{
 	   currentRole:1,
 	   roles:{},
+	   reload:false,
 	   isLogin:false,  //是否登录
 	   // userInfo:{}    ,//用户信息
 	   config:null,
@@ -35,6 +36,10 @@ const store = new Vuex.Store({
 		},
 		setLabelList(state,val){
 			state.labelList=val
+		},
+		setReload(state,val){
+			console.log('xyq',val)
+			state.reload=val
 		}
 	},
 })

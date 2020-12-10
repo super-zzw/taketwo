@@ -3,7 +3,7 @@
 		<view class="mItem">
 			<!-- <view class="mTitle"></view> -->
 			<view class="mBox mBox1">
-				<image src="https://wx.qlogo.cn/mmhead/PuL96pVthdbAm92VzhJcOA1x8gYkL2fRVibSXnyehCsE/0" class="mPic" mode=""></image>
+				<image :src="memberInfo.user_info.avatar" class="mPic" mode=""></image>
 				<view class="name">
 					{{memberInfo.user_info.name}}
 					<text class="name2">{{currentRole==1?'分拣员':'配送员'}}</text>
@@ -21,7 +21,7 @@
 				</view>
 			</view>
 		</view>
-		<view class="mItem">
+		<view class="mItem" v-if="currentRole==1">
 			<view class="mTitle">接单数据(分拣)</view>
 			<view class="mBox mBox2">
 				<view class="box1">
@@ -46,7 +46,7 @@
 				</view>
 			</view>
 		</view>
-		<view class="mItem">
+		<view class="mItem" v-if="currentRole==2">
 			<view class="mTitle">接单数据(配送)</view>
 			<view class="mBox mBox2">
 				<view class="box1">
@@ -75,7 +75,7 @@
 				</view>
 			</view>
 		</view>
-		<view class="btn">
+		<view class="btn" @tap="logout">
 			退出登录
 		</view>
 		<view class="cu-modal bottom-modal" :class="modalName=='bottomModal'?'show':''">
@@ -137,20 +137,38 @@
 				active_school:-1,  //选中的学校
 			};
 		},
-		created() {
+		// onLoad() {
+		// 	this.initData();
+			
+		// },
+		onShow() {
 			this.initData();
-			this.getTeamIndex()
 		},
 		computed:{
-			...mapState(['roles','currentRole','memberInfo'])
+			...mapState(['roles','currentRole','memberInfo','reload'])
 		},
 		watch:{
 			activeTab0(){
+				uni.showLoading({
+					title:"加载中..."
+				})
 				this.getSorterData()
+				uni.hideLoading()
 			},
 			activeTab1(){
+				uni.showLoading({
+					title:"加载中..."
+				})
 				this.getDeliveryData()
-			}
+				uni.hideLoading()
+			},
+				reload(newVal){
+					if(newVal){
+						this.initData()
+						this.$store.commit('setReload',false)
+					}
+				}
+			
 		},
 		methods:{
 			//切换团队
@@ -234,6 +252,7 @@
 				uni.showLoading({
 					title:'加载中...'
 				})
+				await this.getTeamIndex()
 				if(this.roles.length>1){
 					await this.getSorterData()
 					this.getDeliveryData()
@@ -261,6 +280,34 @@
 					this.active_school = _active_school_index;
 				}).catch(err=>{})
 				uni.hideLoading()
+			},
+			// 退出登录
+			logout(){
+				uni.showModal({
+					 title: '提示',
+					 content: '确认退出登录？',
+					   success: res=> {
+					         if (res.confirm) {
+					           this.$http({
+					           	apiName:'deleteToken',
+					           	method:'POST',
+					           	data:{
+					           		re_token:uni.getStorageSync('reToken'),
+					           		token:uni.getStorageSync('token')
+					           	}
+					           	
+					           }).then(res=>{
+					           	   uni.clearStorage();
+								   uni.reLaunch({
+								   	url:'../author/index'
+								   })
+					           })
+					         } else if (res.cancel) {
+					             console.log('用户点击取消');
+					         }
+					     }
+				})
+				
 			},
 			showModal(e) {
 				this.modalName = e.currentTarget.dataset.target;
@@ -456,7 +503,7 @@
 		}
 	}
 	.btn{
-		margin-top: 40rpx;
+		margin-top: 100rpx;
 		border-radius: 40rpx;
 		line-height: 80rpx;
 		border: 2rpx solid #909399;

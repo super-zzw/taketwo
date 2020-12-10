@@ -1,13 +1,13 @@
 <template>
-	<view class="container">
-		<view class="contentBox">
+	<view class="container" v-if="detail">
+		<view class="contentBox" :style="{height:detail.status==1||detail.status==2||(detail.status==3||detail.status==4&&currentRole==2)?'calc(100vh - 128rpx)':'auto'}">
 			<view class="status">
 				订单状态：
 				<block v-if="currentRole==1">
 					<text class="txt" v-if="detail.status==1">待接单</text>
 					<text class="txt" v-if="detail.status==2">待分拣</text>
 					<text class="txt" v-if="detail.status==3">已分拣</text>
-					<text class="txt" v-if="detail.status==4">代配送</text>
+					<text class="txt" v-if="detail.status==4">待配送</text>
 					<text class="txt" v-if="detail.status==5">已退单</text>
 				</block>
 				<block v-if="currentRole==2">
@@ -26,17 +26,18 @@
 				</view>
 				<view class="conts">
 					<view class="code" v-if="detail.status!=1&&detail.status!=5">
-						<text class="desc">取件码：</text>
+						<text class="desc">{{detail.logisticsType==1?'订单号':'取件码'}}：</text>
 						<view class="num">
 							{{detail.fetchCode}}
-							<image src="/static/image/copy.png" mode="" @click="copy"></image>
+							<image src="/static/image/copy.png" mode="" @click="copy(detail.fetchCode)"></image>
 						</view>
 					</view>
 					<view class="infoBox">
 						<image src="../../static/image/send.png" mode="" class="icon"></image>
 						<view class="info">
-							<text class="t1">{{detail.receiverAddress}}</text>
-							<text class="t2">{{detail.receiverName}}&ensp;{{detail.receiverPhone}}</text>
+							<text class="t1">{{detail.receiverAddress+(detail.receiverSchoolName||'')+(detail.receiverBuildingName||'')+
+							(detail.receiverLayersNum||'')+(detail.receiverDoorplate||'')}}</text>
+							<text class="t2">{{detail.receiverName}}&ensp;{{detail.receiverPhone|phoneFormat}}</text>
 						</view>
 					</view>
 					<view class="infoBox mt40">
@@ -49,30 +50,33 @@
 				</view>
 			</view>
 			<view class="sec sec2">
-				<view class="txt" v-if="!(detail.status==1&&currentRole==1)">订单流水号：{{detail.orderNum}} <image src="/static/image/copy.png" mode="" @click="copy"></image>
+				<view class="txt" v-if="!(detail.status==1&&currentRole==1)">订单流水号：{{detail.orderNum}} <image src="/static/image/copy.png" mode="" @click="copy(detail.orderNum)"></image>
 				</view>
 				<text class="txt" v-if="detail.type">订单类型：{{detail.type==1?'定时送':'加急送'}}</text>
 				<text class="txt" v-if="detail.parcelType">包裹类型：{{detail.parcelType==1?'大包裹':'小包裹'}}</text>
 				<text class="txt">收货时间：{{detail.receivingStartTime|dateFormat}}-{{detail.receivingEndTime|dateFormat(8)}}</text>
 				<text class="txt" v-if="detail.delayStartTime">延迟收货时间：{{detail.delayStartTime|dateFormat}}-{{detail.delayEndTime|dateFormat(8)}}</text>
+				<text class="txt" v-if="detail.deliveryRemark">延迟原因：{{detail.deliveryRemark}}</text>
+				
 				<text class="txt" >下单时间：{{detail.createTime|dateFormat}}</text>
 				<text class="txt" v-if="detail.remark">订单备注：{{detail.remark}}</text>
-				<view class="txt">总价：<text class="price">¥{{detail.paymentAmount}}</text></view>
+				<view class="txt" v-if="detail.status==5">总价：<text class="price">¥{{detail.chargebackOldAmount}}</text></view>
+				<view class="txt" v-else>总价：<text class="price">¥{{detail.paymentAmount}}</text></view>
 			</view>
 			
 			<view class="sec sec3" v-if="!(detail.status==1&&currentRole==1)">
 				<text class="txt" v-if="detail.status==1">分拣接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
 				<text class="txt" v-else>接单时间：{{detail.orderReceivingTime|dateFormat}}</text>
-				<!-- <block v-if="status!='待分拣'"> -->
+			
 					<text class="txt" v-if="!(detail.status==2&&currentRole==1)">分拣时间：{{detail.sorterTime|dateFormat}}</text>
 				
-						<text class="txt" v-if="detail.status==4||(currentRole==2&&detail.status!=1)">配送接单时间：2020/11/24 16:30</text>
-						<!-- <text class="txt" v-if="status!='待配送'">完成配送时间：2020/11/24 16:30</text> -->
+						<text class="txt" v-if="detail.status==4||(currentRole==2&&detail.status!=1)">配送接单时间：{{detail.deliveryTime|dateFormat}}</text>
+						<text class="txt" v-if="currentRole==2&&detail.status>2">完成配送时间：{{detail.finishTime|dateFormat}}</text>
 					
 					
 				        <block v-if="detail.status==5">
-							<text class="txt txt1">退单原因：包裹超重，需要增加费用</text>
-							<view class="txt">修改后总价：<text style="color:#FF0000">¥30</text></view>
+							<text class="txt txt1">退单原因：{{detail.chargebackRemark}}</text>
+							<view class="txt">修改后总价：<text style="color:#FF0000">¥{{detail.chargebackAmount}}</text></view>
 						</block>
 						
 				
@@ -83,20 +87,20 @@
 		</view>
 		
         <view class="bottom1" v-if="detail.status==1">
-			<view class="jiedanBtn" @tap="sorterReceiving">接单</view>
+			<view class="jiedanBtn" @tap="receiving">接单</view>
 		</view>
-		<view class="bottom" v-if="detail.status==2">
+		<view class="bottom" v-if="detail.status==2||(detail.status==3||detail.status==4&&currentRole==2)">
 			<view class="box">
-				<view class="contact">
+				<view class="contact" @tap="contact">
 					<image src="/static/image/contact.png" mode=""></image>
 					<text>联系下单人</text>
 				</view>
-				<block v-if="currentRole==1">
+				<block v-if="currentRole==1&&detail.status==2">
 					<view class="btn btn1" data-target="tuidan" @tap="showModal">退单</view>
 					<view class="btn btn2" data-target="fenjian" @tap="showModal">分拣</view>
 					
 				</block>
-				<block v-if="currentRole==2">
+				<block v-if="currentRole==2&&detail.status==2">
 					<view class="btn btn1" data-target="yanchi" @tap="showModal">延迟配送</view>
 					<view class="btn btn2"  @tap="deliveryFinish">配送完成</view>
 				</block>
@@ -113,7 +117,7 @@
 					</view>
 					<view class="t2">
 						<text class="label">修改后总价：</text>
-						<input type="number" v-model="inputValue" class="input" />
+						<input type="digit" v-model="inputValue" class="input" />
 					</view>
 					<view class="t3">
 					<text class="label">退单原因：</text>
@@ -221,7 +225,7 @@
 		data() {
 			return {
 				orderNum:null,
-				detail:{},
+				detail:null,
           
 			   modalName:null,
 			   reasons:['包裹大小选择错误','有违禁品','送货地址超出送达范围','其他原因'],
@@ -238,7 +242,7 @@
 			};
 		},
 		computed: {
-			...mapState(['memberInfo','currentRole','labelList'])
+			...mapState(['memberInfo','currentRole','labelList','reload'])
 		},
 		onLoad(opt) {
 			if(opt.num){
@@ -251,6 +255,21 @@
 				// console.log(val)
 				console.log(utils.unixToDatetime(val,type) )
 				return utils.unixToDatetime(val,type) 
+			},
+			phoneFormat(val){
+				return utils.phoneFormat(val)
+			}
+		},
+		watch:{
+			reload(newVal){
+				if(newVal){
+					this.$nextTick(()=>{
+							this.getOrderDetail()
+							this.$store.commit('setReload',false)
+					})
+				
+					
+				}
 			}
 		},
 		methods: {
@@ -261,6 +280,9 @@
 				this.modalName = name
 			},
 			getOrderDetail(){
+				uni.showLoading({
+					title:'加载中'
+				})
 				let apiName=this.currentRole==1?'sorterDetail':'deliveryDetail'
 				this.$http({
 					apiName:apiName,
@@ -271,6 +293,8 @@
 					}
 				}).then(res=>{
 					this.detail=res.data
+					uni.hideLoading()
+				
 				})
 			},
 			confirmTime(val){
@@ -283,35 +307,54 @@
 				this.delayEndTime=new Date(end).getTime()
 				this.timeTxt=a+val.time
 			},
-			copy() {
+			copy(val) {
 				uni.setClipboardData({
-					data: 'hello',
+					data: val,
 					success: function() {
 						console.log('success');
 					}
 				});
 			},
+			contact(){
+				uni.makePhoneCall({
+				    phoneNumber: this.detail.receiverPhone //仅为示例
+				});
+			},
 			// 分拣接单
-			sorterReceiving(){
+			receiving(){
 				let userInfo=this.memberInfo.user_info
+				let url
+				let id = this.currentRole == 1 ? 'sorterId' : 'deliveryId'
+				// let idVal=this.currentRole == 1 ?this.detail.sorterId:this.detail.deliveryId
+				let name = this.currentRole == 1 ? 'sorterName' : 'deliveryName'
+				let phone = this.currentRole == 1 ? 'sorterPhone' : 'deliveryPhone'
 				let data={
 					id:this.detail.id,
 					orderNum:this.detail.orderNum,
-					sorterId:userInfo.uid,
-					sorterName:userInfo.name,
-					sorterPhone:userInfo.mobile
+				}
+				data[id] = userInfo.uid
+				data[name] = userInfo.name
+				data[phone] = userInfo.mobile
+				if (this.currentRole == 1) {
+					url = '/legwork/team/member/sorter/receiving/'
+					data = {
+						sorterReceivingPOJO: JSON.stringify([data])
+					}
+				} else {
+					url = '/legwork/team/member/delivery/receiving/'
+					data = {
+						deliveryReceivingPOJO: JSON.stringify([data])
+					}
 				}
 				
+				
+				
 				this.$http({
-					url:'/legwork/team/member/sorter/receiving/'+this.memberInfo.user_info.tid,
+					url:url+userInfo.tid,
 					// url:'/legwork/team/member/sorter/receiving',
 					method:'POST',
 					
-					data:{
-						// sorterReceivingPOJO:this.sorterReceivingData
-						sorterReceivingPOJO:JSON.stringify([data]) 
-						// tid:this.memberInfo.user_info.tid
-					}
+					data:data
 					// data: data
 				}).then(res=>{
 					uni.showToast({
@@ -387,7 +430,7 @@
 						duration:1000
 					})
 					setTimeout(()=>{
-						this.$store.commit('setTab',0)
+						this.$store.commit('setTab',5)
 						uni.switchTab({
 							url:'./index'
 						})
@@ -413,7 +456,7 @@
 						duration:1000
 					})
 					setTimeout(()=>{
-						this.$store.commit('setTab',0)
+						this.$store.commit('setTab',2)
 						uni.switchTab({
 							url:'./index'
 						})
@@ -452,7 +495,7 @@
 	}
 	.contentBox{
 		padding: 0 32rpx;
-		// height: calc(100vh - 128rpx);
+		
 		overflow: scroll;
 		padding-bottom: 40rpx;
 		box-sizing: border-box;
