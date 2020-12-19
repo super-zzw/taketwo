@@ -127,14 +127,14 @@
 			return {
 				tabs:["全部","今日","近7天","近30日"],
 				roleArr:['分拣员','配送员'],
-				team_active:-1,  //选中的team
+				team_active:0,  //选中的team
 				activeTab0:1,
 				activeTab1:1,
 				modalName:null,
 				sorterData:null,
 				deliveryData:null,
 				schoolList:[],  //学校列表
-				active_school:-1,  //选中的学校
+				active_school:0,  //选中的学校
 			};
 		},
 		// onLoad() {
@@ -142,7 +142,10 @@
 			
 		// },
 		onShow() {
+			
+				
 			this.initData();
+			
 		},
 		computed:{
 			...mapState(['roles','currentRole','memberInfo','reload'])
@@ -172,13 +175,13 @@
 		},
 		methods:{
 			//切换团队
-			changeTeam(i){
+			async changeTeam(i){
 				if(this.team_active === i){
 					return
 				}else{
 					this.team_active =i;
-					this.getSchoolList();
-					this.active_school = -1;
+					await this.getSchoolList(false);
+					this.active_school = 0;
 				}
 			},
 			//切换学校
@@ -222,7 +225,8 @@
 			//绑定团队
 			bindTeam(){
 				this.$http({
-					apiName:"bindTeam",
+					apiName:"changeTeam",
+					method:'POST',
 					data:{tid:this.memberInfo.team_list[this.team_active].tid}
 				}).then(res => {
 					
@@ -231,7 +235,8 @@
 			//绑定学校
 			bindSchool(){
 				this.$http({
-					apiName:"bindSchool",
+					apiName:"changeSchool",
+					method:'POST',
 					data:{
 						tid:this.memberInfo.team_list[this.team_active].tid,
 						sc_id:this.schoolList[this.active_school].school_id
@@ -262,7 +267,7 @@
 				uni.hideLoading()
 			},
 			//根据团队获取学校列表
-			async getSchoolList(){
+			async getSchoolList(flag=true){
 				uni.showLoading({mask:true})
 				await this.$http({
 					apiName:'getSchoolList',
@@ -272,12 +277,14 @@
 				}).then(res=>{
 					// this.sorterData=res.data
 					this.schoolList = res.list;
+					if(flag){
+						let _active_school_index = this.schoolList.findIndex(item => {
+							return item.school_id == this.memberInfo.school_id;
+						})
+						
+						this.active_school = _active_school_index;
+					}
 					
-					let _active_school_index = this.schoolList.findIndex(item => {
-						return item.school_id == this.memberInfo.school_id;
-					})
-					
-					this.active_school = _active_school_index;
 				}).catch(err=>{})
 				uni.hideLoading()
 			},
@@ -327,7 +334,8 @@
 					method:'POST',
 					data:{
 						date,
-						tid:this.memberInfo.user_info.tid
+						tid:this.memberInfo.user_info.tid,
+						schoolId:this.memberInfo.school_id
 					}
 				}).then(res=>{
 					this.sorterData=res.data
@@ -340,7 +348,8 @@
 					method:'POST',
 					data:{
 						date,
-						tid:this.memberInfo.user_info.tid
+						tid:this.memberInfo.user_info.tid,
+						schoolId:this.memberInfo.school_id
 					}
 				}).then(res=>{
 					this.deliveryData=res.data

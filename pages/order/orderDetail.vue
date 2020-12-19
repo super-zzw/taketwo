@@ -331,6 +331,7 @@
 				let data={
 					id:this.detail.id,
 					orderNum:this.detail.orderNum,
+					schoolId:this.memberInfo.school_id
 				}
 				data[id] = userInfo.uid
 				data[name] = userInfo.name

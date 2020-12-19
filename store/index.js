@@ -11,9 +11,7 @@ const store = new Vuex.Store({
 	   config:null,
 	   labelList:null,
 	   tab:1,
-	   memberInfo:{
-		  
-	   }   //用户信息
+	   memberInfo:null  //用户信息
 	},
 	mutations:{
 		setTab(state,val){
@@ -38,7 +36,7 @@ const store = new Vuex.Store({
 			state.labelList=val
 		},
 		setReload(state,val){
-			console.log('xyq',val)
+			
 			state.reload=val
 		}
 	},

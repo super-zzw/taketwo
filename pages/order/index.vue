@@ -298,6 +298,7 @@
 		computed: {
 			...mapState(['currentRole', 'config', 'memberInfo', 'labelList', 'tab','reload'])
 		},
+	
 		filters: {
 			dateFormat(val, type) {
 				return utils.unixToDatetime(val, type)
@@ -404,6 +405,9 @@
 					this.getOrderList()
 				this.index = 1
 			},
+			memberInfo(newVal){
+				this.getOrderList()
+			},
 			tab(newVal) {
 				this.index = newVal
 				this.getOrderList()
@@ -457,7 +461,7 @@
 
 					}
 				}).then(res => {
-					// console.log(res.data[0].uid)
+					console.log(res.data)
 					this.$store.commit('setRoles', res.data)
 					this.$store.commit('setRole', res.data[0].roleType)
 					this.tabs = res.data[0].roleType == 1 ? ['分拣接单', '待分拣', '已分拣', '待配送', '已退单'] : ['配送接单', '待配送', '已完成', '已确认']
@@ -680,6 +684,7 @@ this.initSearchBox()
 						data = {
 							id: this.orderList[index].id,
 							orderNum: this.orderList[index].orderNum,
+							schoolId:this.memberInfo.school_id
 						}
 						data[id] = userInfo.uid
 						data[name] = userInfo.name
@@ -714,7 +719,8 @@ this.initSearchBox()
 					status: this.index,
 					sortType: this.sortType,
 					sortField: this.sortField,
-					pageNum:this.page
+					pageNum:this.page,
+					schoolId:this.memberInfo.school_id
 				}
 				// console.log(1,JSON.stringify(data))
 				this.$http({
@@ -759,6 +765,7 @@ this.initSearchBox()
 							data = {
 								id: item.id,
 								orderNum: item.orderNum,
+								schoolId:this.memberInfo.school_id
 							}
 							data[id] = userInfo.uid
 							data[name] = userInfo.name

@@ -3,6 +3,7 @@
 		<text class="t1">跑腿小程序申请使用</text>
 		<text class="t2">以下信息：</text>
 		<text class="t3">你的账号信息(昵称、头像、手机号)</text>
+		(本小程序仅限于Taketwo跑腿业务人员使用，如授权后无法登录，请联系平台管理员在管理后台添加权限后，再尝试授权登录。)
 		<button class="btn btn1" hover-class="none" open-type="getUserInfo" lang="zh_CN" @getuserinfo="onGotUserInfo()" >同意</button>
 		
 		<view class="btn btn2">取消</view>
@@ -107,11 +108,25 @@
 					data:_data,
 				}).then(res => {
 					console.log('绑定成功')
-					uni.reLaunch({
-						url:'../order/index'
+					uni.setStorageSync('token',res.token); // 存token
+										uni.setStorageSync('reToken',res.reToken); // 存刷新token
+										// uni.setStorageSync('userInfo',res.wechat_info); // 存session
+					this.$getMemberInfo().then(res=>{
+										 // console.log(res)
+										 this.$store.commit('setMemberInfo',res)
+									if(!res.user_info.tid){
+											uni.reLaunch({
+													url:'/pages/select/team'
+												})
+											}else{
+																this.$isResolve()
+												uni.reLaunch({
+													url:'/pages/order/index'
+												})
+																
+											}
 					})
-					//  this.$config()
-					this.$getMemberInfo()
+										
 					this.hideModal()
 				}).catch(err => {
 					this.hideModal()
