@@ -2,7 +2,7 @@ import Api from './api.js'
 import store from '../store/index.js'
 import utils from "./method.js"
 import qs from 'querystring'
-var test = false;
+var test = true;
 var _baseUrl = '';
 if (test) {
 	 // _baseUrl = 'http://legwork-wechatgateway.dev.gzcyou.com'; 
